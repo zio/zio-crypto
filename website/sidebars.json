@@ -1,7 +1,10 @@
 {
   "overview-sidebar": {
     "Overview": [
-      "overview/overview_index"
+      "overview/overview_index",
+      "overview/secure_random",
+      "overview/hashing",
+      "overview/hmac"
     ]
   },
   "usecases-sidebar": {
