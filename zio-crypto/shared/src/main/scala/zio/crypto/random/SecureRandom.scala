@@ -27,6 +27,10 @@ object SecureRandom {
                e
              )
          }
+    /*
+     * Seed the SecureRandom properly as per
+     * [[https://tersesystems.com/2015/12/17/the-right-way-to-use-securerandom/]]
+     */
     _ <- UIO.effectTotal(r.nextBytes(new Array[Byte](20)))
   } yield r)
     .map(rand =>
