@@ -30,5 +30,5 @@ object SecureRandomSpec extends DefaultRunnableSpec {
         }
       }
     )
-  ).provideSomeLayer[Environment](SecureRandom.live.orDie)
+  ).provideCustomLayer(SecureRandom.live.orDie)
 }

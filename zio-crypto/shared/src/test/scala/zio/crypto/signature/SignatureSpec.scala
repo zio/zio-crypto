@@ -80,5 +80,5 @@ object SignatureSpec extends DefaultRunnableSpec {
     testAlgorithm(SignatureAlgorithm.ECDSASHA256),
     testAlgorithm(SignatureAlgorithm.ECDSASHA384),
     testAlgorithm(SignatureAlgorithm.ECDSASHA512)
-  ).provideSomeLayer[Environment](Signature.live ++ SecureRandom.live.orDie)
+  ).provideCustomLayer(Signature.live ++ SecureRandom.live.orDie)
 }

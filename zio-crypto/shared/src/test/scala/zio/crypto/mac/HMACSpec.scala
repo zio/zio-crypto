@@ -128,5 +128,5 @@ object HMACSpec extends DefaultRunnableSpec {
     testAlgorithm(HMACAlgorithm.HMACSHA256),
     testAlgorithm(HMACAlgorithm.HMACSHA384),
     testAlgorithm(HMACAlgorithm.HMACSHA512)
-  ).provideSomeLayer[Environment](HMAC.live)
+  ).provideCustomLayer(HMAC.live)
 }

@@ -4,7 +4,8 @@
       "overview/overview_index",
       "overview/secure_random",
       "overview/hashing",
-      "overview/hmac"
+      "overview/hmac",
+      "overview/symmetric_encryption"
     ]
   },
   "usecases-sidebar": {

@@ -8,10 +8,10 @@ object SymmetricEncryptionSpec extends DefaultRunnableSpec {
 
   private def testAlgorithm(algorithm: SymmetricEncryptionAlgorithm) = suite(algorithm.toString)(
     suite("bytes")(
-      testM("decrypt(encrypt(m)) == m") {
+      testM("decrypt(encrypt(m, k), k) == m") {
         checkM(Gen.listOf(Gen.anyByte)) { m =>
           for {
-            key        <- SymmetricEncryption.getAESKey(algorithm)
+            key        <- SymmetricEncryption.getKey(algorithm)
             ciphertext <- SymmetricEncryption.encrypt(m, key)
             decrypted  <- SymmetricEncryption.decrypt(ciphertext, key)
           } yield assert(decrypted)(equalTo(m))
@@ -20,9 +20,9 @@ object SymmetricEncryptionSpec extends DefaultRunnableSpec {
     )
   )
 
-  def spec: Spec[Environment, TestFailure[Throwable], TestSuccess] = suite("HashingSpec")(
+  def spec: Spec[Environment, TestFailure[Throwable], TestSuccess] = suite("SymmetricEncryptionSpec")(
     testAlgorithm(SymmetricEncryptionAlgorithm.AES128),
     testAlgorithm(SymmetricEncryptionAlgorithm.AES192),
     testAlgorithm(SymmetricEncryptionAlgorithm.AES256)
-  ).provideSomeLayer[Environment](SecureRandom.live.orDie ++ SymmetricEncryption.live)
+  ).provideCustomLayer(SecureRandom.live.orDie ++ SymmetricEncryption.live)
 }
