@@ -1,91 +1,93 @@
 package zio.crypto.signature
 
 import zio._
+import zio.crypto.random.SecureRandom
 import zio.crypto.random.SecureRandom.SecureRandom
 
-import java.security.spec.ECGenParameterSpec
-import java.security.{ KeyPair, KeyPairGenerator, PrivateKey, PublicKey, Signature => JSignature }
+import java.security.{ KeyPairGenerator, PrivateKey, PublicKey, Signature => JSignature }
 
-sealed trait SignatureAlgorithm
+case class SignatureObject(value: Array[Byte]) extends AnyVal
+sealed class SignatureAlgorithm(val name: String)
 
 object SignatureAlgorithm {
-  case object ECDSASHA256 extends SignatureAlgorithm
-  case object ECDSASHA384 extends SignatureAlgorithm
-  case object ECDSASHA512 extends SignatureAlgorithm
+  case object ECDSASHA256 extends SignatureAlgorithm("SHA256withECDSA")
+  case object ECDSASHA384 extends SignatureAlgorithm("SHA384withECDSA")
+  case object ECDSASHA512 extends SignatureAlgorithm("SHA512withECDSA")
 }
+
+case class SignaturePrivateKey(key: PrivateKey, algorithm: SignatureAlgorithm)
+case class SignaturePublicKey(key: PublicKey, algorithm: SignatureAlgorithm)
+case class SignatureKeyPair(publicKey: SignaturePublicKey, privateKey: SignaturePrivateKey)
 
 object Signature {
   type Signature = Has[Signature.Service]
 
   trait Service {
-    def genKey(alg: SignatureAlgorithm): Task[KeyPair]
-    def sign(m: Array[Byte], privateKey: PrivateKey): RIO[SecureRandom, Array[Byte]]
-    def verify(m: Array[Byte], signature: Array[Byte], publicKey: PublicKey): Task[Boolean]
+    def genKey(alg: SignatureAlgorithm): Task[SignatureKeyPair]
+    def sign(m: Array[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject]
+    def verify(m: Array[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): Task[Boolean]
   }
 
   val live: ULayer[Signature] = ZLayer.succeed(new Service {
 
-    def genKey(alg: SignatureAlgorithm): Task[KeyPair] = Task.effect {
+    def genKey(alg: SignatureAlgorithm): Task[SignatureKeyPair] = Task.effect {
       val keyPairGenerator = KeyPairGenerator.getInstance("EC")
-      keyPairGenerator.initialize(
-        new ECGenParameterSpec(
-          alg match {
-            case SignatureAlgorithm.ECDSASHA256 => "P-256"
-            case SignatureAlgorithm.ECDSASHA384 => "P-384"
-            case SignatureAlgorithm.ECDSASHA512 => "P-521"
-          }
-        )
+      val keypair          = keyPairGenerator.generateKeyPair
+      SignatureKeyPair(
+        publicKey = SignaturePublicKey(keypair.getPublic, alg),
+        privateKey = SignaturePrivateKey(keypair.getPrivate, alg)
       )
-
-//      keyPairGenerator.initialize(alg match {
-//        case SignatureAlgorithm.ECDSASHA256 => 256
-//        case SignatureAlgorithm.ECDSASHA384 => 384
-//        case SignatureAlgorithm.ECDSASHA512 => 512
-//      })
-      keyPairGenerator.generateKeyPair
     }
 
-    def getAlgorithmName(size: Int) = size match {
-      case 256 => "SHA256withECDSA"
-      case 384 => "SHA384withECDSA"
-      case 512 => "SHA512withECDSA"
-    }
+    def sign(m: Array[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject] =
+      for {
+        random <- SecureRandom.getJavaSecureRandom
+        s <- Task.effect {
+               val signature = JSignature.getInstance(privateKey.algorithm.name)
+               signature.initSign(privateKey.key, random)
+               signature.update(m)
+               signature.sign
+             }
+      } yield SignatureObject(s)
 
-    def sign(m: Array[Byte], privateKey: PrivateKey): RIO[SecureRandom, Array[Byte]] = ???
-//      for {
-//        random <- SecureRandom.getJavaSecureRandom
-//        s <- Task.effect {
-//               val signature = JSignature.getInstance(
-//                 getAlgorithmName(privateKey.getAlgorithm.asInstanceOf[ECPrivateKey].getParams)
-//                 privateKey.getAlgorithm
-////                 "SHA256withECDSA"
-//               )
-//               signature.initSign(privateKey, random)
-//               signature.update(m)
-//               signature.sign
-//             }
-//      } yield s
-
-    def verify(m: Array[Byte], signature: Array[Byte], publicKey: PublicKey): Task[Boolean] =
+    def verify(m: Array[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): Task[Boolean] =
       Task.effect {
-        val signatureBuilder = JSignature.getInstance(
-          publicKey.getAlgorithm
-//          "SHA256withECDSA"
-        )
-        signatureBuilder.initVerify(publicKey)
+        val signatureBuilder = JSignature.getInstance(publicKey.algorithm.name)
+        signatureBuilder.initVerify(publicKey.key)
         signatureBuilder.update(m)
-        signatureBuilder.verify(signature)
+        signatureBuilder.verify(signature.value.toArray)
       }
 
   })
 
-  def genKey(alg: SignatureAlgorithm): RIO[Signature, KeyPair] =
+  /**
+   * Generates a keypair to use for signing and verifying messages.
+   *
+   * @param alg: The algorithm for which to generate keys.
+   * @return the keypair
+   */
+  def genKey(alg: SignatureAlgorithm): RIO[Signature, SignatureKeyPair] =
     ZIO.accessM(_.get.genKey(alg))
 
-  def sign(m: Array[Byte], privateKey: PrivateKey): RIO[Signature with SecureRandom, Array[Byte]] =
+  /**
+   * Signs a message `m` with the private key `privateKey`.
+   *
+   * @param m: The message to sign.
+   * @param privateKey: The private key to use in signing.
+   * @return The signature.
+   */
+  def sign(m: Array[Byte], privateKey: SignaturePrivateKey): RIO[Signature with SecureRandom, SignatureObject] =
     ZIO.accessM(_.get.sign(m, privateKey))
 
-  def verify(m: Array[Byte], signature: Array[Byte], publicKey: PublicKey): RIO[Signature, Boolean] =
+  /**
+   * Verifies that the signature `signature` is a valid signature for `m`.
+   *
+   * @param m: The message to use in verification.
+   * @param signature: The signature to verify.
+   * @param publicKey: The public key that should be used to check verification.
+   * @return True if verified and false otherwise.
+   */
+  def verify(m: Array[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): RIO[Signature, Boolean] =
     ZIO.accessM(_.get.verify(m, signature, publicKey))
 
 }
