@@ -3,11 +3,13 @@ package zio.crypto.mac
 import zio.test.Assertion._
 import zio.test._
 import zio._
+import zio.random.Random
 
 import java.nio.charset.StandardCharsets.US_ASCII
 
 object HMACSpec extends DefaultRunnableSpec {
-  private val assertCompletesM = assertM(UIO(true))(isTrue)
+  private val assertCompletesM                                  = assertM(UIO(true))(isTrue)
+  private val genByteArray: Gen[Random with Sized, Array[Byte]] = Gen.listOf(Gen.anyByte).map(_.toArray)
 
   private def testAlgorithm(alg: HMACAlgorithm) = suite(alg.toString)(
     suite("keys")(
@@ -83,7 +85,7 @@ object HMACSpec extends DefaultRunnableSpec {
     ),
     suite("bytes")(
       testM("verify(m, sign(m, k), k) = true") {
-        checkM(Gen.listOf(Gen.anyByte)) { m =>
+        checkM(genByteArray) { m =>
           for {
             k        <- HMAC.genKey(alg)
             hmac     <- HMAC.sign(m, k)
@@ -92,7 +94,7 @@ object HMACSpec extends DefaultRunnableSpec {
         }
       },
       testM("verify(m1, 'garbage', k) = false") {
-        checkM(Gen.listOf(Gen.anyByte), Gen.listOf(Gen.anyByte)) { (m0, m1) =>
+        checkM(genByteArray, genByteArray) { (m0, m1) =>
           for {
             k        <- HMAC.genKey(alg)
             verified <- HMAC.verify(m0, HMACObject(m1), k)
@@ -100,7 +102,7 @@ object HMACSpec extends DefaultRunnableSpec {
         }
       },
       testM("verify(m1, sign(m1, k0), k1) = false") {
-        checkM(Gen.listOf(Gen.anyByte)) { m =>
+        checkM(genByteArray) { m =>
           for {
             k0       <- HMAC.genKey(alg)
             k1       <- HMAC.genKey(alg)
@@ -110,8 +112,8 @@ object HMACSpec extends DefaultRunnableSpec {
         }
       },
       testM("verify(m1, sign(m0, k), k) = false") {
-        checkM(Gen.listOf(Gen.anyByte), Gen.listOf(Gen.anyByte)) {
-          case (m0, m1) if m0 != m1 =>
+        checkM(genByteArray, genByteArray) {
+          case (m0, m1) if !m0.sameElements(m1) =>
             for {
               k        <- HMAC.genKey(alg)
               hmac     <- HMAC.sign(m1, k)

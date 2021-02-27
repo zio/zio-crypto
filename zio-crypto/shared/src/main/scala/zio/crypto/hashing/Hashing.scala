@@ -25,8 +25,8 @@ object Hashing {
   type Hashing = Has[Hashing.Service]
 
   trait Service {
-    def hash(m: Seq[Byte], alg: HashAlgorithm): Task[MessageDigest[Seq[Byte]]]
-    def verify(m: Seq[Byte], digest: MessageDigest[Seq[Byte]], alg: HashAlgorithm): Task[Boolean]
+    def hash(m: Array[Byte], alg: HashAlgorithm): Task[MessageDigest[Array[Byte]]]
+    def verify(m: Array[Byte], digest: MessageDigest[Array[Byte]], alg: HashAlgorithm): Task[Boolean]
 
     def hash(m: String, alg: HashAlgorithm, charset: Charset): Task[MessageDigest[String]]
     def verify(m: String, digest: MessageDigest[String], alg: HashAlgorithm, charset: Charset): Task[Boolean]
@@ -57,14 +57,14 @@ object Hashing {
           digest => verify(m = m.getBytes(charset), MessageDigest(digest), alg = alg)
         )
 
-    override def hash(m: Seq[Byte], alg: HashAlgorithm): Task[MessageDigest[Seq[Byte]]] =
+    override def hash(m: Array[Byte], alg: HashAlgorithm): Task[MessageDigest[Array[Byte]]] =
       Task
-        .effect(JMessageDigest.getInstance(alg.name).digest(m.toArray))
-        .map(x => MessageDigest(x))
+        .effect(JMessageDigest.getInstance(alg.name).digest(m))
+        .map(MessageDigest.apply)
 
-    override def verify(m: Seq[Byte], digest: MessageDigest[Seq[Byte]], alg: HashAlgorithm): Task[Boolean] =
+    override def verify(m: Array[Byte], digest: MessageDigest[Array[Byte]], alg: HashAlgorithm): Task[Boolean] =
       hash(m = m, alg = alg)
-        .map(digest1 => JMessageDigest.isEqual(digest1.value.toArray, digest.value.toArray))
+        .map(digest1 => JMessageDigest.isEqual(digest1.value, digest.value))
 
   })
 
@@ -75,7 +75,7 @@ object Hashing {
    *
    * @return the computed hash.
    */
-  def hash(m: Seq[Byte], alg: HashAlgorithm): RIO[Hashing, MessageDigest[Seq[Byte]]] =
+  def hash(m: Array[Byte], alg: HashAlgorithm): RIO[Hashing, MessageDigest[Array[Byte]]] =
     ZIO.accessM(_.get.hash(m, alg))
 
   /**
@@ -87,7 +87,7 @@ object Hashing {
    * @param alg the algorithm used in hashing the digest
    * @return a boolean indiciating whether `hash(m) == digest`
    */
-  def verify(m: Seq[Byte], digest: MessageDigest[Seq[Byte]], alg: HashAlgorithm): RIO[Hashing, Boolean] =
+  def verify(m: Array[Byte], digest: MessageDigest[Array[Byte]], alg: HashAlgorithm): RIO[Hashing, Boolean] =
     ZIO.accessM(_.get.verify(m, digest, alg))
 
   /**

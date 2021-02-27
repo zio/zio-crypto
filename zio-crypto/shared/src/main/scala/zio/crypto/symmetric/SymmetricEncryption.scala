@@ -15,7 +15,7 @@ object SymmetricEncryptionAlgorithm {
   case object AES256 extends SymmetricEncryptionAlgorithm
 }
 
-case class CipherText(value: Seq[Byte])             extends AnyVal
+case class CipherText(value: Array[Byte])           extends AnyVal
 case class SymmetricEncryptionKey(value: SecretKey) extends AnyVal
 
 object SymmetricEncryption {
@@ -23,8 +23,8 @@ object SymmetricEncryption {
   type SymmetricEncryption = Has[SymmetricEncryption.Service]
 
   trait Service {
-    def encrypt(plainText: Seq[Byte], key: SymmetricEncryptionKey): RIO[SecureRandom, CipherText]
-    def decrypt(ciphertext: CipherText, key: SymmetricEncryptionKey): Task[Seq[Byte]]
+    def encrypt(plainText: Array[Byte], key: SymmetricEncryptionKey): RIO[SecureRandom, CipherText]
+    def decrypt(ciphertext: CipherText, key: SymmetricEncryptionKey): Task[Array[Byte]]
     def getKey(alg: SymmetricEncryptionAlgorithm): RIO[SecureRandom, SymmetricEncryptionKey]
   }
 
@@ -41,7 +41,7 @@ object SymmetricEncryption {
     private def getInstance: Task[Cipher] =
       Task.effect(Cipher.getInstance("AES/GCM/NoPadding"))
 
-    override def encrypt(plainText: Seq[Byte], key: SymmetricEncryptionKey): RIO[SecureRandom, CipherText] =
+    override def encrypt(plainText: Array[Byte], key: SymmetricEncryptionKey): RIO[SecureRandom, CipherText] =
       for {
         iv       <- SecureRandom.nextBytes(NISTIvLengthBytes)
         instance <- getInstance
@@ -55,7 +55,7 @@ object SymmetricEncryption {
                       }
       } yield CipherText(iv ++ ciphertext)
 
-    override def decrypt(ciphertext: CipherText, key: SymmetricEncryptionKey): Task[Seq[Byte]] = for {
+    override def decrypt(ciphertext: CipherText, key: SymmetricEncryptionKey): Task[Array[Byte]] = for {
       instance <- getInstance
       message <- Task.effect {
                    val (iv, encrypted) = ciphertext.value.splitAt(NISTIvLengthBytes)
@@ -93,7 +93,7 @@ object SymmetricEncryption {
    * @return the ciphertext generated from encrypting `plainText` with `key`.
    */
   def encrypt(
-    plainText: Seq[Byte],
+    plainText: Array[Byte],
     key: SymmetricEncryptionKey
   ): RIO[SymmetricEncryption with SecureRandom, CipherText] =
     ZIO.accessM(_.get.encrypt(plainText, key))
@@ -105,7 +105,7 @@ object SymmetricEncryption {
    * @param key: The key to use to decrypt the ciphertext
    * @return the plaintext decrypted from the `CipherText` `ciphertext` under the `SymmetricEncryptionKey` `key`.
    */
-  def decrypt(ciphertext: CipherText, key: SymmetricEncryptionKey): RIO[SymmetricEncryption, Seq[Byte]] =
+  def decrypt(ciphertext: CipherText, key: SymmetricEncryptionKey): RIO[SymmetricEncryption, Array[Byte]] =
     ZIO.accessM(_.get.decrypt(ciphertext, key))
 
   /**

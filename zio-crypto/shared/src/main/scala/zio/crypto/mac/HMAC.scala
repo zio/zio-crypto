@@ -26,8 +26,8 @@ object HMAC {
   type HMAC = Has[HMAC.Service]
 
   trait Service {
-    def sign(m: Seq[Byte], k: HMACSecretKey): Task[HMACObject[Seq[Byte]]]
-    def verify(m: Seq[Byte], hmac: HMACObject[Seq[Byte]], k: HMACSecretKey): Task[Boolean]
+    def sign(m: Array[Byte], k: HMACSecretKey): Task[HMACObject[Array[Byte]]]
+    def verify(m: Array[Byte], hmac: HMACObject[Array[Byte]], k: HMACSecretKey): Task[Boolean]
 
     def sign(m: String, k: HMACSecretKey, charset: Charset): Task[HMACObject[String]]
     def verify(m: String, hmac: HMACObject[String], k: HMACSecretKey, charset: Charset): Task[Boolean]
@@ -39,15 +39,15 @@ object HMAC {
 
   val live: ULayer[HMAC] = ZLayer.succeed(new Service {
 
-    override def sign(m: Seq[Byte], k: HMACSecretKey): Task[HMACObject[Seq[Byte]]] =
+    override def sign(m: Array[Byte], k: HMACSecretKey): Task[HMACObject[Array[Byte]]] =
       Task.effect {
         val instance = Mac.getInstance(k.underlying.getAlgorithm)
         instance.init(k.underlying)
         HMACObject(instance.doFinal(m.toArray))
       }
 
-    override def verify(m: Seq[Byte], hmac: HMACObject[Seq[Byte]], k: HMACSecretKey): Task[Boolean] =
-      sign(m = m, k = k).map(x => MessageDigest.isEqual(x.value.toArray, hmac.value.toArray))
+    override def verify(m: Array[Byte], hmac: HMACObject[Array[Byte]], k: HMACSecretKey): Task[Boolean] =
+      sign(m = m, k = k).map(x => MessageDigest.isEqual(x.value, hmac.value))
 
     override def sign(m: String, k: HMACSecretKey, charset: Charset): Task[HMACObject[String]] =
       sign(m = m.getBytes(charset), k = k)
@@ -99,7 +99,7 @@ object HMAC {
    * @param k: the secret key to use for signing
    * @return the HMAC of `m`
    */
-  def sign(m: Seq[Byte], k: HMACSecretKey): RIO[HMAC, HMACObject[Seq[Byte]]] =
+  def sign(m: Array[Byte], k: HMACSecretKey): RIO[HMAC, HMACObject[Array[Byte]]] =
     ZIO.accessM(_.get.sign(m, k))
 
   /**
@@ -110,7 +110,7 @@ object HMAC {
    * @param k: the secret key used for signing.
    * @return true if `hmac` is a valid HMAC for `m` under `k`, and false otherwise.
    */
-  def verify(m: Seq[Byte], hmac: HMACObject[Seq[Byte]], k: HMACSecretKey): RIO[HMAC, Boolean] =
+  def verify(m: Array[Byte], hmac: HMACObject[Array[Byte]], k: HMACSecretKey): RIO[HMAC, Boolean] =
     ZIO.accessM(_.get.verify(m, hmac, k))
 
   /**
