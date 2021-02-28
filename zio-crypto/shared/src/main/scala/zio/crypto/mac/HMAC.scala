@@ -17,9 +17,9 @@ object HMACAlgorithm {
   case object HMACSHA512 extends HMACAlgorithm
 }
 
-case class HMACSerializedKey(value: String)     extends AnyVal
-case class HMACSecretKey(underlying: SecretKey) extends AnyVal
-case class HMACObject[Kind](value: Kind)        extends AnyVal
+final case class HMACSerializedKey(value: String)     extends AnyVal
+final case class HMACSecretKey(underlying: SecretKey) extends AnyVal
+final case class HMACObject[Kind](value: Kind)        extends AnyVal
 
 object HMAC {
 
