@@ -3,7 +3,7 @@
     "Overview": [
       "overview/overview_index",
       "overview/secure_random",
-      "overview/hashing",
+      "overview/hash",
       "overview/hmac",
       "overview/symmetric_encryption",
       "overview/signature"
