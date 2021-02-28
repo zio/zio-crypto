@@ -1,4 +1,4 @@
-package zio.crypto.hashing
+package zio.crypto.hash
 
 import zio._
 import zio.crypto.ByteHelpers
@@ -20,9 +20,9 @@ object HashAlgorithm {
 
 case class MessageDigest[T](value: T) extends AnyVal
 
-object Hashing {
+object Hash {
 
-  type Hashing = Has[Hashing.Service]
+  type Hash = Has[Hash.Service]
 
   trait Service {
     def hash(m: Array[Byte], alg: HashAlgorithm): Task[MessageDigest[Array[Byte]]]
@@ -32,7 +32,7 @@ object Hashing {
     def verify(m: String, digest: MessageDigest[String], alg: HashAlgorithm, charset: Charset): Task[Boolean]
   }
 
-  val live: ULayer[Hashing] = ZLayer.succeed(new Service {
+  val live: ULayer[Hash] = ZLayer.succeed(new Service {
 
     override def hash(m: String, alg: HashAlgorithm, charset: Charset): Task[MessageDigest[String]] =
       hash(
@@ -75,7 +75,7 @@ object Hashing {
    *
    * @return the computed hash.
    */
-  def hash(m: Array[Byte], alg: HashAlgorithm): RIO[Hashing, MessageDigest[Array[Byte]]] =
+  def hash(m: Array[Byte], alg: HashAlgorithm): RIO[Hash, MessageDigest[Array[Byte]]] =
     ZIO.accessM(_.get.hash(m, alg))
 
   /**
@@ -87,7 +87,7 @@ object Hashing {
    * @param alg the algorithm used in hashing the digest
    * @return a boolean indiciating whether `hash(m) == digest`
    */
-  def verify(m: Array[Byte], digest: MessageDigest[Array[Byte]], alg: HashAlgorithm): RIO[Hashing, Boolean] =
+  def verify(m: Array[Byte], digest: MessageDigest[Array[Byte]], alg: HashAlgorithm): RIO[Hash, Boolean] =
     ZIO.accessM(_.get.verify(m, digest, alg))
 
   /**
@@ -97,7 +97,7 @@ object Hashing {
    *
    * @return the computed hash.
    */
-  def hash(m: String, alg: HashAlgorithm, charset: Charset): RIO[Hashing, MessageDigest[String]] =
+  def hash(m: String, alg: HashAlgorithm, charset: Charset): RIO[Hash, MessageDigest[String]] =
     ZIO.accessM(_.get.hash(m, alg, charset))
 
   /**
@@ -109,7 +109,7 @@ object Hashing {
    * @param alg the algorithm used in hashing the digest
    * @return a boolean indiciating whether `hash(m) == digest`
    */
-  def verify(m: String, digest: MessageDigest[String], alg: HashAlgorithm, charset: Charset): RIO[Hashing, Boolean] =
+  def verify(m: String, digest: MessageDigest[String], alg: HashAlgorithm, charset: Charset): RIO[Hash, Boolean] =
     ZIO.accessM(_.get.verify(m, digest, alg, charset))
 
 }
