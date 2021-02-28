@@ -4,7 +4,7 @@ import zio.crypto.Secure
 import zio.crypto.unsecure
 
 import java.nio.charset.StandardCharsets.US_ASCII
-import zio.{ Chunk, UIO }
+import zio._
 import zio.random.Random
 import zio.test.Assertion._
 import zio.test._

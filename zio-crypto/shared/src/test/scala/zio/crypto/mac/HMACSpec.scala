@@ -8,7 +8,7 @@ import zio.random.Random
 import java.nio.charset.StandardCharsets.US_ASCII
 
 object HMACSpec extends DefaultRunnableSpec {
-  private val assertCompletesM                                  = assertM(UIO(true))(isTrue)
+  private val assertCompletesM                                  = assertM(UIO.succeed(true))(isTrue)
   private val genByteChunk: Gen[Random with Sized, Chunk[Byte]] = Gen.chunkOf(Gen.anyByte)
 
   private def testAlgorithm(alg: HMACAlgorithm) = suite(alg.toString)(
@@ -17,7 +17,7 @@ object HMACSpec extends DefaultRunnableSpec {
         for {
           k             <- HMAC.genKey(alg)
           serializedK   <- HMAC.serializeKey(k)
-          deserializedK <- HMAC.deserializeKey(serializedK)
+          deserializedK <- HMAC.deserializeKey(serializedK).map(_.get)
         } yield assert(k)(equalTo(deserializedK)) &&
           assert(k.underlying.getEncoded)(equalTo(deserializedK.underlying.getEncoded)) &&
           assert(k.underlying.getAlgorithm)(equalTo(k.underlying.getAlgorithm))
@@ -26,15 +26,15 @@ object HMACSpec extends DefaultRunnableSpec {
         for {
           k            <- HMAC.genKey(alg)
           serializedK  <- HMAC.serializeKey(k)
-          extraLengthK <- HMAC.deserializeKey(HMACSerializedKey(serializedK.value + "h")).run
-        } yield assert(extraLengthK)(fails(anything))
+          extraLengthK <- HMAC.deserializeKey(HMACSerializedKey(serializedK.value + "h"))
+        } yield assert(extraLengthK)(isNone)
       },
       testM("verify(m, sign(m, deserialize(serialize(k)), k) = true") {
         checkM(Gen.anyASCIIString) { m =>
           for {
             k             <- HMAC.genKey(alg)
             serializedK   <- HMAC.serializeKey(k)
-            deserializedK <- HMAC.deserializeKey(serializedK)
+            deserializedK <- HMAC.deserializeKey(serializedK).map(_.get)
 
             hmac     <- HMAC.sign(m, k, US_ASCII)
             verified <- HMAC.verify(m, hmac, deserializedK, US_ASCII)

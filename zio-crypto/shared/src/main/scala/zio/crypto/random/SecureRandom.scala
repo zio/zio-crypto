@@ -13,7 +13,7 @@ object SecureRandom {
     def nextBytes(length: Int): Task[Chunk[Byte]]
     def nextString(entropyBytes: Int): Task[String]
     def setSeed(seed: Long): UIO[Unit]
-    def getJavaSecureRandom: UIO[JSecureRandom]
+    def getJavaSecureRandom: JSecureRandom
   }
 
   private val UnixURandom = "NativePRNGNonBlocking"
@@ -54,7 +54,7 @@ object SecureRandom {
         def setSeed(seed: Long): UIO[Unit] =
           UIO.effectTotal(rand.setSeed(seed))
 
-        override def getJavaSecureRandom: UIO[JSecureRandom] = UIO(rand)
+        override def getJavaSecureRandom: JSecureRandom = rand
       }
     )
     .toLayer
@@ -102,6 +102,6 @@ object SecureRandom {
    * @return a `java.security.SecureRandom` that backs this `SecureRandom`.
    */
   def getJavaSecureRandom: URIO[SecureRandom, JSecureRandom] =
-    ZIO.accessM(_.get.getJavaSecureRandom)
+    ZIO.access(_.get.getJavaSecureRandom)
 
 }

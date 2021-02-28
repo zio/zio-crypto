@@ -26,15 +26,15 @@ object HMAC {
   type HMAC = Has[HMAC.Service]
 
   trait Service {
-    def sign(m: Chunk[Byte], k: HMACSecretKey): Task[HMACObject[Chunk[Byte]]]
-    def verify(m: Chunk[Byte], hmac: HMACObject[Chunk[Byte]], k: HMACSecretKey): Task[Boolean]
+    def sign(m: Chunk[Byte], k: HMACSecretKey): HMACObject[Chunk[Byte]]
+    def verify(m: Chunk[Byte], hmac: HMACObject[Chunk[Byte]], k: HMACSecretKey): Boolean
 
-    def sign(m: String, k: HMACSecretKey, charset: Charset): Task[HMACObject[String]]
-    def verify(m: String, hmac: HMACObject[String], k: HMACSecretKey, charset: Charset): Task[Boolean]
+    def sign(m: String, k: HMACSecretKey, charset: Charset): HMACObject[String]
+    def verify(m: String, hmac: HMACObject[String], k: HMACSecretKey, charset: Charset): Boolean
 
     def genKey(alg: HMACAlgorithm): Task[HMACSecretKey]
-    def serializeKey(k: HMACSecretKey): Task[HMACSerializedKey]
-    def deserializeKey(k: HMACSerializedKey): Task[HMACSecretKey]
+    def serializeKey(k: HMACSecretKey): HMACSerializedKey
+    def deserializeKey(k: HMACSerializedKey): Option[HMACSecretKey]
   }
 
   val live: ULayer[HMAC] = ZLayer.succeed(new Service {
@@ -46,62 +46,73 @@ object HMAC {
       case HMACAlgorithm.HMACSHA512 => "HmacSHA512"
     }
 
-    override def sign(m: Chunk[Byte], k: HMACSecretKey): Task[HMACObject[Chunk[Byte]]] =
-      Task.effect {
-        val instance = Mac.getInstance(k.underlying.getAlgorithm)
-        instance.init(k.underlying)
-        HMACObject(Chunk.fromArray(instance.doFinal(m.toArray)))
-      }
+    override def sign(m: Chunk[Byte], k: HMACSecretKey): HMACObject[Chunk[Byte]] = {
+      // May throw NoSuchAlgorithmException
+      val instance = Mac.getInstance(k.underlying.getAlgorithm)
+      // May throw InvalidKeyException
+      instance.init(k.underlying)
+      HMACObject(Chunk.fromArray(instance.doFinal(m.toArray)))
+    }
 
-    override def verify(m: Chunk[Byte], hmac: HMACObject[Chunk[Byte]], k: HMACSecretKey): Task[Boolean] =
-      sign(m = m, k = k).map(x => MessageDigest.isEqual(x.value.toArray, hmac.value.toArray))
+    override def verify(m: Chunk[Byte], hmac: HMACObject[Chunk[Byte]], k: HMACSecretKey): Boolean =
+      MessageDigest.isEqual(sign(m = m, k = k).value.toArray, hmac.value.toArray)
 
-    override def sign(m: String, k: HMACSecretKey, charset: Charset): Task[HMACObject[String]] =
-      sign(m = Chunk.fromArray(m.getBytes(charset)), k = k)
-        .map(_.value)
-        .map(ByteHelpers.toB64String)
-        .map(HMACObject.apply)
+    override def sign(m: String, k: HMACSecretKey, charset: Charset): HMACObject[String] =
+      HMACObject(
+        ByteHelpers.toB64String(
+          sign(
+            m = Chunk.fromArray(
+              // May throw CharacterCodingException
+              m.getBytes(charset)
+            ),
+            k = k
+          ).value
+        )
+      )
 
     override def verify(
       m: String,
       hmac: HMACObject[String],
       k: HMACSecretKey,
       charset: Charset
-    ): Task[Boolean] =
+    ): Boolean =
       ByteHelpers
         .fromB64String(hmac.value)
-        .foldM(
-          _ => UIO(false),
-          d => verify(m = Chunk.fromArray(m.getBytes(charset)), HMACObject(d), k = k)
+        .exists(d =>
+          verify(
+            m = Chunk.fromArray(
+              // May throw CharacterCodingException
+              m.getBytes(charset)
+            ),
+            HMACObject(d),
+            k = k
+          )
         )
 
-    override def genKey(alg: HMACAlgorithm): Task[HMACSecretKey] = Task.effect {
+    override def genKey(alg: HMACAlgorithm): Task[HMACSecretKey] = Task.effect(
       HMACSecretKey(
         KeyGenerator
           .getInstance(getAlgorithmName(alg))
           .generateKey()
       )
-    }
+    )
 
-    override def serializeKey(k: HMACSecretKey): Task[HMACSerializedKey] =
-      Task.effect(
-        HMACSerializedKey(
-          k.underlying.getAlgorithm +
-            "-" +
-            ByteHelpers.toB64String(Chunk.fromArray(k.underlying.getEncoded))
-        )
+    override def serializeKey(k: HMACSecretKey): HMACSerializedKey =
+      HMACSerializedKey(
+        k.underlying.getAlgorithm +
+          "-" +
+          ByteHelpers.toB64String(Chunk.fromArray(k.underlying.getEncoded))
       )
 
-    override def deserializeKey(k: HMACSerializedKey): Task[HMACSecretKey] =
+    override def deserializeKey(k: HMACSerializedKey): Option[HMACSecretKey] =
       k.value.split("-", 2) match {
         case Array(algorithm, b64Key) =>
-          for {
-            deserializedKey <- ByteHelpers.fromB64String(b64Key)
-            key             <- Task.effect(new SecretKeySpec(deserializedKey.toArray, algorithm))
-          } yield HMACSecretKey(key)
+          ByteHelpers
+            .fromB64String(b64Key)
+            .map(deserializedKey => new SecretKeySpec(deserializedKey.toArray, algorithm))
+            .map(HMACSecretKey.apply)
 
-        case _ =>
-          Task.fail(new IllegalArgumentException("Poorly encoded key. Could not parse algorithm for key"))
+        case _ => None
       }
   })
 
@@ -113,7 +124,7 @@ object HMAC {
    * @return the HMAC of `m`
    */
   def sign(m: Chunk[Byte], k: HMACSecretKey): RIO[HMAC, HMACObject[Chunk[Byte]]] =
-    ZIO.accessM(_.get.sign(m, k))
+    ZIO.access(_.get.sign(m, k))
 
   /**
    * Verifies that `hmac` is a valid message authentication code for `m`.
@@ -124,7 +135,7 @@ object HMAC {
    * @return true if `hmac` is a valid HMAC for `m` under `k`, and false otherwise.
    */
   def verify(m: Chunk[Byte], hmac: HMACObject[Chunk[Byte]], k: HMACSecretKey): RIO[HMAC, Boolean] =
-    ZIO.accessM(_.get.verify(m, hmac, k))
+    ZIO.access(_.get.verify(m, hmac, k))
 
   /**
    * Computes the HMAC of a message `m` with the key `k`.
@@ -135,7 +146,7 @@ object HMAC {
    * @return the HMAC of `m`
    */
   def sign(m: String, k: HMACSecretKey, charset: Charset): RIO[HMAC, HMACObject[String]] =
-    ZIO.accessM(_.get.sign(m, k, charset))
+    ZIO.access(_.get.sign(m, k, charset))
 
   /**
    * Verifies that `hmac` is a valid message authentication code for `m`.
@@ -147,7 +158,7 @@ object HMAC {
    * @return true if `hmac` is a valid HMAC for `m` under `k`, and false otherwise.
    */
   def verify(m: String, hmac: HMACObject[String], k: HMACSecretKey, charset: Charset): RIO[HMAC, Boolean] =
-    ZIO.accessM(_.get.verify(m, hmac, k, charset))
+    ZIO.access(_.get.verify(m, hmac, k, charset))
 
   /**
    * Generates a secret key for the HMAC algorithm `alg`.
@@ -163,14 +174,14 @@ object HMAC {
    * @return The serialized key.
    */
   def serializeKey(k: HMACSecretKey): RIO[HMAC, HMACSerializedKey] =
-    ZIO.accessM(_.get.serializeKey(k))
+    ZIO.access(_.get.serializeKey(k))
 
   /**
    * Deserializes the HMAC secret key.
    * @param k: The serialized key.
    * @return The deserialized key
    */
-  def deserializeKey(k: HMACSerializedKey): RIO[HMAC, HMACSecretKey] =
-    ZIO.accessM(_.get.deserializeKey(k))
+  def deserializeKey(k: HMACSerializedKey): RIO[HMAC, Option[HMACSecretKey]] =
+    ZIO.access(_.get.deserializeKey(k))
 
 }

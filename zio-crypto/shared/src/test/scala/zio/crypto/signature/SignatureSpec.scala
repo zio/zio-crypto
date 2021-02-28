@@ -2,7 +2,7 @@ package zio.crypto.signature
 
 import zio._
 import zio.crypto.random.SecureRandom
-import zio.test.Assertion.{ isFalse, isTrue }
+import zio.test.Assertion._
 import zio.test._
 
 object SignatureSpec extends DefaultRunnableSpec {
@@ -28,6 +28,15 @@ object SignatureSpec extends DefaultRunnableSpec {
               verified  <- Signature.verify(m1, signature, k.publicKey)
             } yield assert(verified)(isFalse)
           case _ => assertCompletesM
+        }
+      },
+      testM("sign(m, k) != sign(m, k)") {
+        checkM(Gen.chunkOf(Gen.anyByte)) { m =>
+          for {
+            k          <- Signature.genKey(alg)
+            signature1 <- Signature.sign(m, k.privateKey)
+            signature2 <- Signature.sign(m, k.privateKey)
+          } yield assert(signature1)(equalTo(signature2))
         }
       }
     )
