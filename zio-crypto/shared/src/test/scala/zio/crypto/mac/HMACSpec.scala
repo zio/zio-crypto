@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets.US_ASCII
 
 object HMACSpec extends DefaultRunnableSpec {
   private val assertCompletesM                                  = assertM(UIO(true))(isTrue)
-  private val genByteArray: Gen[Random with Sized, Array[Byte]] = Gen.listOf(Gen.anyByte).map(_.toArray)
+  private val genByteChunk: Gen[Random with Sized, Chunk[Byte]] = Gen.chunkOf(Gen.anyByte)
 
   private def testAlgorithm(alg: HMACAlgorithm) = suite(alg.toString)(
     suite("keys")(
@@ -85,7 +85,7 @@ object HMACSpec extends DefaultRunnableSpec {
     ),
     suite("bytes")(
       testM("verify(m, sign(m, k), k) = true") {
-        checkM(genByteArray) { m =>
+        checkM(genByteChunk) { m =>
           for {
             k        <- HMAC.genKey(alg)
             hmac     <- HMAC.sign(m, k)
@@ -94,7 +94,7 @@ object HMACSpec extends DefaultRunnableSpec {
         }
       },
       testM("verify(m1, 'garbage', k) = false") {
-        checkM(genByteArray, genByteArray) { (m0, m1) =>
+        checkM(genByteChunk, genByteChunk) { (m0, m1) =>
           for {
             k        <- HMAC.genKey(alg)
             verified <- HMAC.verify(m0, HMACObject(m1), k)
@@ -102,7 +102,7 @@ object HMACSpec extends DefaultRunnableSpec {
         }
       },
       testM("verify(m1, sign(m1, k0), k1) = false") {
-        checkM(genByteArray) { m =>
+        checkM(genByteChunk) { m =>
           for {
             k0       <- HMAC.genKey(alg)
             k1       <- HMAC.genKey(alg)
@@ -112,8 +112,8 @@ object HMACSpec extends DefaultRunnableSpec {
         }
       },
       testM("verify(m1, sign(m0, k), k) = false") {
-        checkM(genByteArray, genByteArray) {
-          case (m0, m1) if !m0.sameElements(m1) =>
+        checkM(genByteChunk, genByteChunk) {
+          case (m0, m1) if m0 != m1 =>
             for {
               k        <- HMAC.genKey(alg)
               hmac     <- HMAC.sign(m1, k)

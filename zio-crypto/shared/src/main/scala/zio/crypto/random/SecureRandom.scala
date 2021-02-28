@@ -10,7 +10,7 @@ object SecureRandom {
   type SecureRandom = Has[SecureRandom.Service]
 
   trait Service {
-    def nextBytes(length: Int): Task[Array[Byte]]
+    def nextBytes(length: Int): Task[Chunk[Byte]]
     def nextString(entropyBytes: Int): Task[String]
     def setSeed(seed: Long): UIO[Unit]
     def getJavaSecureRandom: UIO[JSecureRandom]
@@ -36,7 +36,7 @@ object SecureRandom {
     .map(rand =>
       new Service {
 
-        def nextBytes(length: Int): Task[Array[Byte]] =
+        def nextBytes(length: Int): Task[Chunk[Byte]] =
           length match {
             case x if x < 0 =>
               IO.fail(new IllegalArgumentException(s"Requested $length bytes < 0 for random bytes"))
@@ -44,7 +44,7 @@ object SecureRandom {
               UIO.effectTotal {
                 val array = Array.ofDim[Byte](length)
                 rand.nextBytes(array)
-                array
+                Chunk.fromArray(array)
               }
           }
 
@@ -62,10 +62,10 @@ object SecureRandom {
   /**
    * Generates a pseudo-random Arrayuence of bytes of the specified length.
    *
-   * @param length the requested length of the resulting `Array[Byte]`.
-   * @return a `Array[Byte]` of length `length`
+   * @param length the requested length of the resulting `Chunk[Byte]`.
+   * @return a `Chunk[Byte]` of length `length`
    */
-  def nextBytes(length: => Int): RIO[SecureRandom, Array[Byte]] =
+  def nextBytes(length: => Int): RIO[SecureRandom, Chunk[Byte]] =
     ZIO.accessM(_.get.nextBytes(length))
 
   /**

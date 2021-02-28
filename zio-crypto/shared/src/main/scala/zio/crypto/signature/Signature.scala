@@ -6,7 +6,7 @@ import zio.crypto.random.SecureRandom.SecureRandom
 
 import java.security.{ KeyPairGenerator, PrivateKey, PublicKey, Signature => JSignature }
 
-case class SignatureObject(value: Array[Byte]) extends AnyVal
+case class SignatureObject(value: Chunk[Byte]) extends AnyVal
 sealed class SignatureAlgorithm(val name: String)
 
 object SignatureAlgorithm {
@@ -24,8 +24,8 @@ object Signature {
 
   trait Service {
     def genKey(alg: SignatureAlgorithm): Task[SignatureKeyPair]
-    def sign(m: Array[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject]
-    def verify(m: Array[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): Task[Boolean]
+    def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject]
+    def verify(m: Chunk[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): Task[Boolean]
   }
 
   val live: ULayer[Signature] = ZLayer.succeed(new Service {
@@ -39,22 +39,22 @@ object Signature {
       )
     }
 
-    def sign(m: Array[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject] =
+    def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject] =
       for {
         random <- SecureRandom.getJavaSecureRandom
         s <- Task.effect {
                val signature = JSignature.getInstance(privateKey.algorithm.name)
                signature.initSign(privateKey.key, random)
-               signature.update(m)
+               signature.update(m.toArray)
                signature.sign
              }
-      } yield SignatureObject(s)
+      } yield SignatureObject(Chunk.fromArray(s))
 
-    def verify(m: Array[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): Task[Boolean] =
+    def verify(m: Chunk[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): Task[Boolean] =
       Task.effect {
         val signatureBuilder = JSignature.getInstance(publicKey.algorithm.name)
         signatureBuilder.initVerify(publicKey.key)
-        signatureBuilder.update(m)
+        signatureBuilder.update(m.toArray)
         signatureBuilder.verify(signature.value.toArray)
       }
 
@@ -76,7 +76,7 @@ object Signature {
    * @param privateKey: The private key to use in signing.
    * @return The signature.
    */
-  def sign(m: Array[Byte], privateKey: SignaturePrivateKey): RIO[Signature with SecureRandom, SignatureObject] =
+  def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[Signature with SecureRandom, SignatureObject] =
     ZIO.accessM(_.get.sign(m, privateKey))
 
   /**
@@ -87,7 +87,7 @@ object Signature {
    * @param publicKey: The public key that should be used to check verification.
    * @return True if verified and false otherwise.
    */
-  def verify(m: Array[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): RIO[Signature, Boolean] =
+  def verify(m: Chunk[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): RIO[Signature, Boolean] =
     ZIO.accessM(_.get.verify(m, signature, publicKey))
 
 }

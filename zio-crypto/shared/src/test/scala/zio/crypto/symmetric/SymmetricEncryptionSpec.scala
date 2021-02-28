@@ -1,18 +1,15 @@
 package zio.crypto.symmetric
 
 import zio.crypto.random.SecureRandom
-import zio.random.Random
 import zio.test.Assertion._
 import zio.test._
 
 object SymmetricEncryptionSpec extends DefaultRunnableSpec {
 
-  private val genByteArray: Gen[Random with Sized, Array[Byte]] = Gen.listOf(Gen.anyByte).map(_.toArray)
-
   private def testAlgorithm(algorithm: SymmetricEncryptionAlgorithm) = suite(algorithm.toString)(
     suite("bytes")(
       testM("decrypt(encrypt(m, k), k) == m") {
-        checkM(genByteArray) { m =>
+        checkM(Gen.chunkOf(Gen.anyByte)) { m =>
           for {
             key        <- SymmetricEncryption.getKey(algorithm)
             ciphertext <- SymmetricEncryption.encrypt(m, key)

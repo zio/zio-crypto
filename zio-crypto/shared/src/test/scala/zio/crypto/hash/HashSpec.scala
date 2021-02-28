@@ -1,7 +1,7 @@
 package zio.crypto.hash
 
 import java.nio.charset.StandardCharsets.US_ASCII
-import zio.UIO
+import zio.{ Chunk, UIO }
 import zio.random.Random
 import zio.test.Assertion._
 import zio.test._
@@ -10,12 +10,12 @@ object HashSpec extends DefaultRunnableSpec {
 
   private val assertCompletesM = assertM(UIO(true))(isTrue)
 
-  private val genByteArray: Gen[Random with Sized, Array[Byte]] = Gen.listOf(Gen.anyByte).map(_.toArray)
+  private val genByteChunk: Gen[Random with Sized, Chunk[Byte]] = Gen.chunkOf(Gen.anyByte)
 
   private def testAlgorithm(alg: HashAlgorithm) = suite(alg.toString)(
     suite("bytes")(
       testM("verify(m, hash(m)) = true") {
-        checkM(genByteArray) { m =>
+        checkM(genByteChunk) { m =>
           for {
             digest   <- Hash.hash(m = m, alg = alg)
             verified <- Hash.verify(m = m, digest = digest, alg = alg)
@@ -23,13 +23,13 @@ object HashSpec extends DefaultRunnableSpec {
         }
       },
       testM("verify(m, 'garbage') = false") {
-        checkM(genByteArray, genByteArray) { (m0, m1) =>
+        checkM(genByteChunk, genByteChunk) { (m0, m1) =>
           assertM(Hash.verify(m = m0, digest = MessageDigest(m1), alg = alg))(isFalse)
         }
       },
       testM("verify(m0, hash(m1)) = false") {
-        checkM(genByteArray, genByteArray) {
-          case (m0, m1) if !m0.sameElements(m1) =>
+        checkM(genByteChunk, genByteChunk) {
+          case (m0, m1) if m0 != m1 =>
             for {
               digest   <- Hash.hash(m0, alg)
               verified <- Hash.verify(m = m1, digest = digest, alg = alg)

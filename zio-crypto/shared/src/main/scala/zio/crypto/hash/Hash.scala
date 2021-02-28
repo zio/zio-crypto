@@ -25,8 +25,8 @@ object Hash {
   type Hash = Has[Hash.Service]
 
   trait Service {
-    def hash(m: Array[Byte], alg: HashAlgorithm): Task[MessageDigest[Array[Byte]]]
-    def verify(m: Array[Byte], digest: MessageDigest[Array[Byte]], alg: HashAlgorithm): Task[Boolean]
+    def hash(m: Chunk[Byte], alg: HashAlgorithm): Task[MessageDigest[Chunk[Byte]]]
+    def verify(m: Chunk[Byte], digest: MessageDigest[Chunk[Byte]], alg: HashAlgorithm): Task[Boolean]
 
     def hash(m: String, alg: HashAlgorithm, charset: Charset): Task[MessageDigest[String]]
     def verify(m: String, digest: MessageDigest[String], alg: HashAlgorithm, charset: Charset): Task[Boolean]
@@ -36,7 +36,7 @@ object Hash {
 
     override def hash(m: String, alg: HashAlgorithm, charset: Charset): Task[MessageDigest[String]] =
       hash(
-        m = m.getBytes(charset),
+        m = Chunk.fromArray(m.getBytes(charset)),
         alg = alg
       )
         .map(_.value)
@@ -54,17 +54,18 @@ object Hash {
         .foldM(
           // If the base-64 decoding fails, this can't be a correct message
           _ => UIO(false),
-          digest => verify(m = m.getBytes(charset), MessageDigest(digest), alg = alg)
+          digest => verify(m = Chunk.fromArray(m.getBytes(charset)), MessageDigest(digest), alg = alg)
         )
 
-    override def hash(m: Array[Byte], alg: HashAlgorithm): Task[MessageDigest[Array[Byte]]] =
+    override def hash(m: Chunk[Byte], alg: HashAlgorithm): Task[MessageDigest[Chunk[Byte]]] =
       Task
-        .effect(JMessageDigest.getInstance(alg.name).digest(m))
+        .effect(JMessageDigest.getInstance(alg.name).digest(m.toArray))
+        .map(Chunk.fromArray)
         .map(MessageDigest.apply)
 
-    override def verify(m: Array[Byte], digest: MessageDigest[Array[Byte]], alg: HashAlgorithm): Task[Boolean] =
+    override def verify(m: Chunk[Byte], digest: MessageDigest[Chunk[Byte]], alg: HashAlgorithm): Task[Boolean] =
       hash(m = m, alg = alg)
-        .map(digest1 => JMessageDigest.isEqual(digest1.value, digest.value))
+        .map(digest1 => JMessageDigest.isEqual(digest1.value.toArray, digest.value.toArray))
 
   })
 
@@ -75,7 +76,7 @@ object Hash {
    *
    * @return the computed hash.
    */
-  def hash(m: Array[Byte], alg: HashAlgorithm): RIO[Hash, MessageDigest[Array[Byte]]] =
+  def hash(m: Chunk[Byte], alg: HashAlgorithm): RIO[Hash, MessageDigest[Chunk[Byte]]] =
     ZIO.accessM(_.get.hash(m, alg))
 
   /**
@@ -87,7 +88,7 @@ object Hash {
    * @param alg the algorithm used in hashing the digest
    * @return a boolean indiciating whether `hash(m) == digest`
    */
-  def verify(m: Array[Byte], digest: MessageDigest[Array[Byte]], alg: HashAlgorithm): RIO[Hash, Boolean] =
+  def verify(m: Chunk[Byte], digest: MessageDigest[Chunk[Byte]], alg: HashAlgorithm): RIO[Hash, Boolean] =
     ZIO.accessM(_.get.verify(m, digest, alg))
 
   /**
