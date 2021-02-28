@@ -6,16 +6,16 @@ import zio.crypto.ByteHelpers
 import java.nio.charset.Charset
 import java.security.{ MessageDigest => JMessageDigest }
 
-sealed class HashAlgorithm(val name: String)
+sealed trait HashAlgorithm
 
 object HashAlgorithm {
-  case object SHA256 extends HashAlgorithm("SHA-256")
-  case object SHA512 extends HashAlgorithm("SHA-512")
+  case object SHA256 extends HashAlgorithm
+  case object SHA512 extends HashAlgorithm
 
   // DO NOT USE IN A SECURE CONTEXT
-  case object MD5 extends HashAlgorithm("MD5")
+  case object MD5 extends HashAlgorithm
   // DO NOT USE IN A SECURE CONTEXT
-  case object SHA1 extends HashAlgorithm("SHA-1")
+  case object SHA1 extends HashAlgorithm
 }
 
 case class MessageDigest[T](value: T) extends AnyVal
@@ -33,6 +33,13 @@ object Hash {
   }
 
   val live: ULayer[Hash] = ZLayer.succeed(new Service {
+
+    private def getAlgorithmName(alg: HashAlgorithm) = alg match {
+      case HashAlgorithm.MD5    => "MD5"
+      case HashAlgorithm.SHA1   => "SHA-1"
+      case HashAlgorithm.SHA256 => "SHA-256"
+      case HashAlgorithm.SHA512 => "SHA-512"
+    }
 
     override def hash(m: String, alg: HashAlgorithm, charset: Charset): Task[MessageDigest[String]] =
       hash(
@@ -59,7 +66,7 @@ object Hash {
 
     override def hash(m: Chunk[Byte], alg: HashAlgorithm): Task[MessageDigest[Chunk[Byte]]] =
       Task
-        .effect(JMessageDigest.getInstance(alg.name).digest(m.toArray))
+        .effect(JMessageDigest.getInstance(getAlgorithmName(alg)).digest(m.toArray))
         .map(Chunk.fromArray)
         .map(MessageDigest.apply)
 
