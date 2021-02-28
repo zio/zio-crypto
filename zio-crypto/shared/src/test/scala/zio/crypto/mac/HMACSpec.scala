@@ -20,8 +20,7 @@ object HMACSpec extends DefaultRunnableSpec {
           deserializedK <- HMAC.deserializeKey(serializedK)
         } yield assert(k)(equalTo(deserializedK)) &&
           assert(k.underlying.getEncoded)(equalTo(deserializedK.underlying.getEncoded)) &&
-          assert(k.underlying.getAlgorithm)(equalTo(k.underlying.getAlgorithm)) &&
-          assert(k.underlying.getAlgorithm)(equalsIgnoreCase(alg.name))
+          assert(k.underlying.getAlgorithm)(equalTo(k.underlying.getAlgorithm))
       },
       testM("deserialize('garbage') fails") {
         for {

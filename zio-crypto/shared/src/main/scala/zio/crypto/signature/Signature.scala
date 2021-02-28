@@ -7,12 +7,12 @@ import zio.crypto.random.SecureRandom.SecureRandom
 import java.security.{ KeyPairGenerator, PrivateKey, PublicKey, Signature => JSignature }
 
 case class SignatureObject(value: Chunk[Byte]) extends AnyVal
-sealed class SignatureAlgorithm(val name: String)
+sealed trait SignatureAlgorithm
 
 object SignatureAlgorithm {
-  case object ECDSASHA256 extends SignatureAlgorithm("SHA256withECDSA")
-  case object ECDSASHA384 extends SignatureAlgorithm("SHA384withECDSA")
-  case object ECDSASHA512 extends SignatureAlgorithm("SHA512withECDSA")
+  case object ECDSASHA256 extends SignatureAlgorithm
+  case object ECDSASHA384 extends SignatureAlgorithm
+  case object ECDSASHA512 extends SignatureAlgorithm
 }
 
 case class SignaturePrivateKey(key: PrivateKey, algorithm: SignatureAlgorithm)
@@ -30,6 +30,12 @@ object Signature {
 
   val live: ULayer[Signature] = ZLayer.succeed(new Service {
 
+    private def getAlgorithmName(alg: SignatureAlgorithm) = alg match {
+      case SignatureAlgorithm.ECDSASHA256 => "SHA256withECDSA"
+      case SignatureAlgorithm.ECDSASHA384 => "SHA384withECDSA"
+      case SignatureAlgorithm.ECDSASHA512 => "SHA512withECDSA"
+    }
+
     def genKey(alg: SignatureAlgorithm): Task[SignatureKeyPair] = Task.effect {
       val keyPairGenerator = KeyPairGenerator.getInstance("EC")
       val keypair          = keyPairGenerator.generateKeyPair
@@ -43,7 +49,7 @@ object Signature {
       for {
         random <- SecureRandom.getJavaSecureRandom
         s <- Task.effect {
-               val signature = JSignature.getInstance(privateKey.algorithm.name)
+               val signature = JSignature.getInstance(getAlgorithmName(privateKey.algorithm))
                signature.initSign(privateKey.key, random)
                signature.update(m.toArray)
                signature.sign
@@ -52,7 +58,7 @@ object Signature {
 
     def verify(m: Chunk[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): Task[Boolean] =
       Task.effect {
-        val signatureBuilder = JSignature.getInstance(publicKey.algorithm.name)
+        val signatureBuilder = JSignature.getInstance(getAlgorithmName(publicKey.algorithm))
         signatureBuilder.initVerify(publicKey.key)
         signatureBuilder.update(m.toArray)
         signatureBuilder.verify(signature.value.toArray)

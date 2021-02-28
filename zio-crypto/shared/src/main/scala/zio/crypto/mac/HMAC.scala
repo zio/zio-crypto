@@ -8,13 +8,13 @@ import java.security.MessageDigest
 import javax.crypto.spec.SecretKeySpec
 import javax.crypto.{ KeyGenerator, Mac, SecretKey }
 
-sealed class HMACAlgorithm(val name: String)
+sealed trait HMACAlgorithm
 
 object HMACAlgorithm {
-  case object HMACSHA1   extends HMACAlgorithm("HmacSHA1")
-  case object HMACSHA256 extends HMACAlgorithm("HmacSHA256")
-  case object HMACSHA384 extends HMACAlgorithm("HmacSHA384")
-  case object HMACSHA512 extends HMACAlgorithm("HmacSHA512")
+  case object HMACSHA1   extends HMACAlgorithm
+  case object HMACSHA256 extends HMACAlgorithm
+  case object HMACSHA384 extends HMACAlgorithm
+  case object HMACSHA512 extends HMACAlgorithm
 }
 
 case class HMACSerializedKey(value: String)     extends AnyVal
@@ -38,6 +38,13 @@ object HMAC {
   }
 
   val live: ULayer[HMAC] = ZLayer.succeed(new Service {
+
+    private def getAlgorithmName(alg: HMACAlgorithm) = alg match {
+      case HMACAlgorithm.HMACSHA1   => "HmacSHA1"
+      case HMACAlgorithm.HMACSHA256 => "HmacSHA256"
+      case HMACAlgorithm.HMACSHA384 => "HmacSHA384"
+      case HMACAlgorithm.HMACSHA512 => "HmacSHA512"
+    }
 
     override def sign(m: Chunk[Byte], k: HMACSecretKey): Task[HMACObject[Chunk[Byte]]] =
       Task.effect {
@@ -71,7 +78,7 @@ object HMAC {
     override def genKey(alg: HMACAlgorithm): Task[HMACSecretKey] = Task.effect {
       HMACSecretKey(
         KeyGenerator
-          .getInstance(alg.name)
+          .getInstance(getAlgorithmName(alg))
           .generateKey()
       )
     }
