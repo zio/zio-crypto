@@ -3,7 +3,7 @@ package zio.crypto.random
 import zio._
 import zio.crypto.ByteHelpers
 
-import java.security.{ NoSuchAlgorithmException, SecureRandom => JSecureRandom }
+import java.security.{NoSuchAlgorithmException, SecureRandom => JSecureRandom}
 
 object SecureRandom {
 
@@ -13,48 +13,46 @@ object SecureRandom {
     def nextBytes(length: Int): Task[Chunk[Byte]]
     def nextString(entropyBytes: Int): Task[String]
     def setSeed(seed: Long): UIO[Unit]
-    def getJavaSecureRandom: JSecureRandom
+    def execute[A](fn: JSecureRandom => A): Task[A]
   }
 
-  private val UnixURandom = "NativePRNGNonBlocking"
-
   val live: Layer[NoSuchAlgorithmException, SecureRandom] = (for {
-    r <- Task.effect(JSecureRandom.getInstance(UnixURandom)).mapError {
-           case e: NoSuchAlgorithmException => e
-           case e =>
-             new NoSuchAlgorithmException(
-               s"Could not create algorithm $UnixURandom",
-               e
-             )
-         }
-    /*
-     * Seed the SecureRandom properly as per
-     * [[https://tersesystems.com/2015/12/17/the-right-way-to-use-securerandom/]]
-     */
-    _ <- UIO.effectTotal(r.nextBytes(new Array[Byte](20)))
-  } yield r)
-    .map(rand =>
-      new Service {
+    // Java's SecureRandom can be a major source of lock contention.
+    // Tink wraps Java's SecureRandom in a ThreadLocal to solve this problem.
+    // https://github.com/google/tink/issues/72
+    randomRef <- FiberRef.make[JSecureRandom](new JSecureRandom())
 
-        def nextBytes(length: Int): Task[Chunk[Byte]] =
+    // Force seeding
+    // The returned SecureRandom object has not been seeded.
+    // To seed the returned object, call the setSeed method.
+    // If setSeed is not called, the first call to nextBytes
+    // will force the SecureRandom object to seed itself.
+    // This self-seeding will not occur if setSeed was previously called.
+    // https://docs.oracle.com/javase/8/docs/api/java/security/SecureRandom.html
+    _ <- randomRef.get.map(_.nextLong())
+  } yield randomRef)
+    .map(randomRef =>
+      new Service {
+        override def nextBytes(length: Int): Task[Chunk[Byte]] =
           length match {
             case x if x < 0 =>
               IO.fail(new IllegalArgumentException(s"Requested $length bytes < 0 for random bytes"))
             case _ =>
-              UIO.effectTotal {
+              randomRef.get.map { r =>
                 val array = Array.ofDim[Byte](length)
-                rand.nextBytes(array)
+                r.nextBytes(array)
                 Chunk.fromArray(array)
               }
           }
 
-        def nextString(entropyBytes: Int): Task[String] =
+        override def nextString(entropyBytes: Int): Task[String] =
           nextBytes(entropyBytes).map(ByteHelpers.toB64String)
 
-        def setSeed(seed: Long): UIO[Unit] =
-          UIO.effectTotal(rand.setSeed(seed))
+        override def setSeed(seed: Long): UIO[Unit] =
+          randomRef.get.map(_.setSeed(seed))
 
-        override def getJavaSecureRandom: JSecureRandom = rand
+        override def execute[A](fn: JSecureRandom => A): Task[A] =
+          randomRef.get.map(fn)
       }
     )
     .toLayer
@@ -96,12 +94,13 @@ object SecureRandom {
     ZIO.accessM(_.get.setSeed(seed))
 
   /**
-   * Exposes the underlying `java.security.SecureRandom`
-   * used internally.
+   * Provides the underlying `java.security.SecureRandom`
+   * used internally to the function `fn`.
    *
-   * @return a `java.security.SecureRandom` that backs this `SecureRandom`.
+   * @param fn: A function taking a `java.security.SecureRandom`
+   * @return the value returned by `fn`
    */
-  def getJavaSecureRandom: URIO[SecureRandom, JSecureRandom] =
-    ZIO.access(_.get.getJavaSecureRandom)
+  def execute[A](fn: JSecureRandom => A): RIO[SecureRandom, A] =
+    ZIO.accessM(_.get.execute(fn))
 
 }

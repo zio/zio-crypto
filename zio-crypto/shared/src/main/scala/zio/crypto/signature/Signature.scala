@@ -4,7 +4,7 @@ import zio._
 import zio.crypto.random.SecureRandom
 import zio.crypto.random.SecureRandom.SecureRandom
 
-import java.security.{ KeyPairGenerator, PrivateKey, PublicKey, Signature => JSignature }
+import java.security.{KeyPairGenerator, PrivateKey, PublicKey, Signature => JSignature}
 
 case class SignatureObject(value: Chunk[Byte]) extends AnyVal
 sealed trait SignatureAlgorithm
@@ -46,15 +46,13 @@ object Signature {
     }
 
     def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject] =
-      for {
-        random <- SecureRandom.getJavaSecureRandom
-        s <- Task.effect {
-               val signature = JSignature.getInstance(getAlgorithmName(privateKey.algorithm))
-               signature.initSign(privateKey.key, random)
-               signature.update(m.toArray)
-               signature.sign
-             }
-      } yield SignatureObject(Chunk.fromArray(s))
+      SecureRandom.execute { random =>
+        val signature = JSignature.getInstance(getAlgorithmName(privateKey.algorithm))
+        signature.initSign(privateKey.key, random)
+        signature.update(m.toArray)
+        signature.sign
+      }
+        .map(s => SignatureObject(Chunk.fromArray(s)))
 
     def verify(m: Chunk[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): Task[Boolean] =
       Task.effect {

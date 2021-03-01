@@ -5,7 +5,7 @@ import zio.crypto.random.SecureRandom
 import zio.crypto.random.SecureRandom.SecureRandom
 
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.{ Cipher, KeyGenerator, SecretKey }
+import javax.crypto.{Cipher, KeyGenerator, SecretKey}
 
 sealed trait SymmetricEncryptionAlgorithm
 
@@ -70,8 +70,7 @@ object SymmetricEncryption {
 
     override def getKey(alg: SymmetricEncryptionAlgorithm): RIO[SecureRandom, SymmetricEncryptionKey] =
       for {
-        random <- SecureRandom.getJavaSecureRandom
-        key <- Task.effect {
+        key <- SecureRandom.execute { random =>
                  val keyGen = KeyGenerator.getInstance("AES")
                  val keysize = alg match {
                    case SymmetricEncryptionAlgorithm.AES128 => 128
