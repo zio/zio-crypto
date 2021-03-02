@@ -1,7 +1,12 @@
 {
   "overview-sidebar": {
     "Overview": [
-      "overview/overview_index"
+      "overview/overview_index",
+      "overview/secure_random",
+      "overview/hash",
+      "overview/hmac",
+      "overview/symmetric_encryption",
+      "overview/signature"
     ]
   },
   "usecases-sidebar": {

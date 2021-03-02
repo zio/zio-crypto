@@ -1,10 +1,15 @@
 ---
 id: overview_index
-title: "Contents"
+title: "Installation"
 ---
 
-TODO: List of contents available
+ZIO Crypto is a ZIO-idiomatic wrapper over Java's 
+basic cryptographic functions.
+It provides hashing, secure random generation,
+and HMAC signatures and verifications.
 
 ## Installation
 
-TODO: Installation details
+```sbt
+libraryDependencies += "dev.zio" %% "zio-crypto" % "0.0.1"
+```
