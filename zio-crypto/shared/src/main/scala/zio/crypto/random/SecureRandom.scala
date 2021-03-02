@@ -1,9 +1,9 @@
 package zio.crypto.random
 
+import java.security.{ NoSuchAlgorithmException, SecureRandom => JSecureRandom }
+
 import zio._
 import zio.crypto.ByteHelpers
-
-import java.security.{NoSuchAlgorithmException, SecureRandom => JSecureRandom}
 
 object SecureRandom {
 
@@ -37,7 +37,7 @@ object SecureRandom {
           length match {
             case x if x < 0 =>
               IO.fail(new IllegalArgumentException(s"Requested $length bytes < 0 for random bytes"))
-            case _ =>
+            case _          =>
               randomRef.get.map { r =>
                 val array = Array.ofDim[Byte](length)
                 r.nextBytes(array)

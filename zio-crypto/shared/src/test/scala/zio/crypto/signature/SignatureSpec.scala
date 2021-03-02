@@ -1,11 +1,11 @@
 package zio.crypto.signature
 
+import java.nio.charset.StandardCharsets.US_ASCII
+
 import zio._
 import zio.crypto.random.SecureRandom
 import zio.test.Assertion._
 import zio.test._
-
-import java.nio.charset.StandardCharsets.US_ASCII
 
 object SignatureSpec extends DefaultRunnableSpec {
   private val assertCompletesM = assertM(UIO(true))(isTrue)
@@ -29,7 +29,7 @@ object SignatureSpec extends DefaultRunnableSpec {
               signature <- Signature.sign(m0, k.privateKey)
               verified  <- Signature.verify(m1, signature, k.publicKey)
             } yield assert(verified)(isFalse)
-          case _ => assertCompletesM
+          case _                    => assertCompletesM
         }
       },
       testM("sign(m, k) != sign(m, k)") {
@@ -60,7 +60,7 @@ object SignatureSpec extends DefaultRunnableSpec {
               signature <- Signature.sign(m0, k.privateKey, US_ASCII)
               verified  <- Signature.verify(m1, signature, k.publicKey, US_ASCII)
             } yield assert(verified)(isFalse)
-          case _ => assertCompletesM
+          case _                    => assertCompletesM
         }
       },
       testM("sign(m, k) != sign(m, k)") {

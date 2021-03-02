@@ -1,12 +1,12 @@
 package zio.crypto.signature
 
+import java.nio.charset.Charset
+import java.security.{ KeyPairGenerator, PrivateKey, PublicKey, Signature => JSignature }
+
 import zio._
 import zio.crypto.ByteHelpers
 import zio.crypto.random.SecureRandom
 import zio.crypto.random.SecureRandom.SecureRandom
-
-import java.nio.charset.Charset
-import java.security.{KeyPairGenerator, PrivateKey, PublicKey, Signature => JSignature}
 
 case class SignatureObject[T](value: T) extends AnyVal
 sealed trait SignatureAlgorithm
@@ -92,7 +92,7 @@ object Signature {
             signature = SignatureObject(signatureBytes),
             publicKey = publicKey
           )
-        case _ => UIO(false)
+        case _                    => UIO(false)
       }
   })
 

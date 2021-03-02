@@ -1,6 +1,7 @@
 package zio.crypto.symmetric
 
 import java.nio.charset.StandardCharsets.US_ASCII
+
 import zio.crypto.random.SecureRandom
 import zio.test.Assertion._
 import zio.test._

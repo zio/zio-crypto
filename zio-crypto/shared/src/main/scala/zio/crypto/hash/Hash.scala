@@ -1,11 +1,12 @@
 package zio.crypto.hash
 
-import zio._
-import zio.crypto.{ ByteHelpers, Secure }
-
 import java.nio.charset.Charset
 import java.security.{ MessageDigest => JMessageDigest }
+
 import scala.annotation.implicitNotFound
+
+import zio._
+import zio.crypto.{ ByteHelpers, Secure }
 
 sealed trait HashAlgorithm
 

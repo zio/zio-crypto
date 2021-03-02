@@ -1,12 +1,12 @@
 package zio.crypto.mac
 
-import zio._
-import zio.crypto.ByteHelpers
-
 import java.nio.charset.Charset
 import java.security.MessageDigest
 import javax.crypto.spec.SecretKeySpec
 import javax.crypto.{ KeyGenerator, Mac, SecretKey }
+
+import zio._
+import zio.crypto.ByteHelpers
 
 sealed trait HMACAlgorithm
 

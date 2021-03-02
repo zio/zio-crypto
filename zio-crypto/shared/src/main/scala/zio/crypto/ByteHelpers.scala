@@ -1,9 +1,10 @@
 package zio.crypto
 
-import zio.Chunk
-
 import java.util.Base64
+
 import scala.util.Try
+
+import zio.Chunk
 
 private[crypto] object ByteHelpers {
   def toB64String(decoded: Chunk[Byte]): String = Base64.getEncoder.encodeToString(decoded.toArray)

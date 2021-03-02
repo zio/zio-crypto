@@ -1,10 +1,9 @@
 package zio.crypto.hash
 
-import zio.crypto.Secure
-import zio.crypto.unsecure
-
 import java.nio.charset.StandardCharsets.US_ASCII
+
 import zio._
+import zio.crypto.{ Secure, unsecure }
 import zio.random.Random
 import zio.test.Assertion._
 import zio.test._
@@ -37,7 +36,7 @@ object HashSpec extends DefaultRunnableSpec {
               digest   <- Hash.hash(m0)
               verified <- Hash.verify(m = m1, digest = digest)
             } yield assert(verified)(isFalse)
-          case _ => assertCompletesM
+          case _                    => assertCompletesM
         }
       }
     ),
@@ -62,7 +61,7 @@ object HashSpec extends DefaultRunnableSpec {
               digest   <- Hash.hash(m0, US_ASCII)
               verified <- Hash.verify(m = m1, digest = digest, US_ASCII)
             } yield assert(verified)(isFalse)
-          case _ => assertCompletesM
+          case _                    => assertCompletesM
         }
       }
     )

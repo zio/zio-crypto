@@ -1,13 +1,13 @@
 package zio.crypto.symmetric
 
+import java.nio.charset.Charset
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.{ Cipher, KeyGenerator, SecretKey }
+
 import zio._
 import zio.crypto.ByteHelpers
 import zio.crypto.random.SecureRandom
 import zio.crypto.random.SecureRandom.SecureRandom
-
-import java.nio.charset.Charset
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.{Cipher, KeyGenerator, SecretKey}
 
 sealed trait SymmetricEncryptionAlgorithm
 
@@ -52,8 +52,8 @@ object SymmetricEncryption {
       key: SymmetricEncryptionKey
     ): RIO[SecureRandom, CipherText[Chunk[Byte]]] =
       for {
-        iv       <- SecureRandom.nextBytes(NISTIvLengthBytes)
-        instance <- getInstance
+        iv         <- SecureRandom.nextBytes(NISTIvLengthBytes)
+        instance   <- getInstance
         ciphertext <- Task.effect {
                         instance.init(
                           Cipher.ENCRYPT_MODE,
@@ -66,21 +66,21 @@ object SymmetricEncryption {
 
     override def decrypt(ciphertext: CipherText[Chunk[Byte]], key: SymmetricEncryptionKey): Task[Chunk[Byte]] = for {
       instance <- getInstance
-      message <- Task.effect {
-                   val (iv, encrypted) = ciphertext.value.splitAt(NISTIvLengthBytes)
-                   instance.init(
-                     Cipher.DECRYPT_MODE,
-                     key.value,
-                     new GCMParameterSpec(NISTTagLengthBits, iv.toArray)
-                   )
-                   instance.doFinal(encrypted.toArray)
-                 }
+      message  <- Task.effect {
+                    val (iv, encrypted) = ciphertext.value.splitAt(NISTIvLengthBytes)
+                    instance.init(
+                      Cipher.DECRYPT_MODE,
+                      key.value,
+                      new GCMParameterSpec(NISTTagLengthBits, iv.toArray)
+                    )
+                    instance.doFinal(encrypted.toArray)
+                  }
     } yield Chunk.fromArray(message)
 
     override def getKey(alg: SymmetricEncryptionAlgorithm): RIO[SecureRandom, SymmetricEncryptionKey] =
       for {
         key <- SecureRandom.execute { random =>
-                 val keyGen = KeyGenerator.getInstance("AES")
+                 val keyGen  = KeyGenerator.getInstance("AES")
                  val keysize = alg match {
                    case SymmetricEncryptionAlgorithm.AES128 => 128
                    case SymmetricEncryptionAlgorithm.AES192 => 192
@@ -109,7 +109,7 @@ object SymmetricEncryption {
         case Some(b) =>
           decrypt(CipherText(b), key)
             .map(x => new String(x.toArray, charset))
-        case _ => Task.fail(new IllegalArgumentException("Ciphertext is not a base-64 encoded string"))
+        case _       => Task.fail(new IllegalArgumentException("Ciphertext is not a base-64 encoded string"))
       }
 
   })
