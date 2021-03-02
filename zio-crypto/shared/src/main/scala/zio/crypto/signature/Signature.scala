@@ -1,12 +1,14 @@
 package zio.crypto.signature
 
 import zio._
+import zio.crypto.ByteHelpers
 import zio.crypto.random.SecureRandom
 import zio.crypto.random.SecureRandom.SecureRandom
 
+import java.nio.charset.Charset
 import java.security.{KeyPairGenerator, PrivateKey, PublicKey, Signature => JSignature}
 
-case class SignatureObject(value: Chunk[Byte]) extends AnyVal
+case class SignatureObject[T](value: T) extends AnyVal
 sealed trait SignatureAlgorithm
 
 object SignatureAlgorithm {
@@ -24,8 +26,15 @@ object Signature {
 
   trait Service {
     def genKey(alg: SignatureAlgorithm): Task[SignatureKeyPair]
-    def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject]
-    def verify(m: Chunk[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): Task[Boolean]
+    def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject[Chunk[Byte]]]
+    def sign(m: String, privateKey: SignaturePrivateKey, charset: Charset): RIO[SecureRandom, SignatureObject[String]]
+    def verify(m: Chunk[Byte], signature: SignatureObject[Chunk[Byte]], publicKey: SignaturePublicKey): Task[Boolean]
+    def verify(
+      m: String,
+      signature: SignatureObject[String],
+      publicKey: SignaturePublicKey,
+      charset: Charset
+    ): Task[Boolean]
   }
 
   val live: ULayer[Signature] = ZLayer.succeed(new Service {
@@ -45,7 +54,7 @@ object Signature {
       )
     }
 
-    def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject] =
+    def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject[Chunk[Byte]]] =
       SecureRandom.execute { random =>
         val signature = JSignature.getInstance(getAlgorithmName(privateKey.algorithm))
         signature.initSign(privateKey.key, random)
@@ -54,7 +63,7 @@ object Signature {
       }
         .map(s => SignatureObject(Chunk.fromArray(s)))
 
-    def verify(m: Chunk[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): Task[Boolean] =
+    def verify(m: Chunk[Byte], signature: SignatureObject[Chunk[Byte]], publicKey: SignaturePublicKey): Task[Boolean] =
       Task.effect {
         val signatureBuilder = JSignature.getInstance(getAlgorithmName(publicKey.algorithm))
         signatureBuilder.initVerify(publicKey.key)
@@ -62,6 +71,29 @@ object Signature {
         signatureBuilder.verify(signature.value.toArray)
       }
 
+    override def sign(
+      m: String,
+      privateKey: SignaturePrivateKey,
+      charset: Charset
+    ): RIO[SecureRandom, SignatureObject[String]] =
+      sign(Chunk.fromArray(m.getBytes(charset)), privateKey)
+        .map(x => SignatureObject(ByteHelpers.toB64String(x.value)))
+
+    override def verify(
+      m: String,
+      signature: SignatureObject[String],
+      publicKey: SignaturePublicKey,
+      charset: Charset
+    ): Task[Boolean] =
+      ByteHelpers.fromB64String(signature.value) match {
+        case Some(signatureBytes) =>
+          verify(
+            m = Chunk.fromArray(m.getBytes(charset)),
+            signature = SignatureObject(signatureBytes),
+            publicKey = publicKey
+          )
+        case _ => UIO(false)
+      }
   })
 
   /**
@@ -80,8 +112,26 @@ object Signature {
    * @param privateKey: The private key to use in signing.
    * @return The signature.
    */
-  def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[Signature with SecureRandom, SignatureObject] =
+  def sign(
+    m: Chunk[Byte],
+    privateKey: SignaturePrivateKey
+  ): RIO[Signature with SecureRandom, SignatureObject[Chunk[Byte]]] =
     ZIO.accessM(_.get.sign(m, privateKey))
+
+  /**
+   * Signs a message `m` with the private key `privateKey`.
+   *
+   * @param m: The message to sign.
+   * @param privateKey: The private key to use in signing.
+   * @param charset: The charset of `m`.
+   * @return The signature.
+   */
+  def sign(
+    m: String,
+    privateKey: SignaturePrivateKey,
+    charset: Charset
+  ): RIO[Signature with SecureRandom, SignatureObject[String]] =
+    ZIO.accessM(_.get.sign(m, privateKey, charset))
 
   /**
    * Verifies that the signature `signature` is a valid signature for `m`.
@@ -91,7 +141,28 @@ object Signature {
    * @param publicKey: The public key that should be used to check verification.
    * @return True if verified and false otherwise.
    */
-  def verify(m: Chunk[Byte], signature: SignatureObject, publicKey: SignaturePublicKey): RIO[Signature, Boolean] =
+  def verify(
+    m: Chunk[Byte],
+    signature: SignatureObject[Chunk[Byte]],
+    publicKey: SignaturePublicKey
+  ): RIO[Signature, Boolean] =
     ZIO.accessM(_.get.verify(m, signature, publicKey))
+
+  /**
+   * Verifies that the signature `signature` is a valid signature for `m`.
+   *
+   * @param m: The message to use in verification.
+   * @param signature: The signature to verify.
+   * @param publicKey: The public key that should be used to check verification.
+   * @param charset: The charset used to encode `m`.
+   * @return True if verified and false otherwise.
+   */
+  def verify(
+    m: String,
+    signature: SignatureObject[String],
+    publicKey: SignaturePublicKey,
+    charset: Charset
+  ): RIO[Signature, Boolean] =
+    ZIO.accessM(_.get.verify(m, signature, publicKey, charset))
 
 }
