@@ -45,9 +45,10 @@ lazy val zioCrypto = crossProject(JSPlatform, JVMPlatform)
   .settings(buildInfoSettings("zio.crypto"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"          % zioVersion,
-      "dev.zio" %% "zio-test"     % zioVersion % "test",
-      "dev.zio" %% "zio-test-sbt" % zioVersion % "test"
+      "dev.zio"               %% "zio"          % zioVersion,
+      "dev.zio"               %% "zio-test"     % zioVersion % "test",
+      "dev.zio"               %% "zio-test-sbt" % zioVersion % "test",
+      "com.google.crypto.tink" % "tink"         % "1.5.0"
     )
   )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
