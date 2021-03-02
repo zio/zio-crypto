@@ -1,5 +1,6 @@
 package zio.crypto.symmetric
 
+import java.nio.charset.StandardCharsets.US_ASCII
 import zio.crypto.random.SecureRandom
 import zio.test.Assertion._
 import zio.test._
@@ -23,6 +24,26 @@ object SymmetricEncryptionSpec extends DefaultRunnableSpec {
             key        <- SymmetricEncryption.getKey(algorithm)
             ciphertext <- SymmetricEncryption.encrypt(m, key)
             decrypted  <- SymmetricEncryption.decrypt(ciphertext, key)
+          } yield assert(decrypted)(equalTo(m))
+        }
+      }
+    ),
+    suite("string")(
+      testM("encrypt(m, k) != encrypt(m, k)") {
+        checkM(Gen.anyASCIIString) { m =>
+          for {
+            key         <- SymmetricEncryption.getKey(algorithm)
+            ciphertext1 <- SymmetricEncryption.encrypt(m, key, US_ASCII)
+            ciphertext2 <- SymmetricEncryption.encrypt(m, key, US_ASCII)
+          } yield assert(ciphertext1)(not(equalTo(ciphertext2)))
+        }
+      },
+      testM("decrypt(encrypt(m, k), k) == m") {
+        checkM(Gen.anyASCIIString) { m =>
+          for {
+            key        <- SymmetricEncryption.getKey(algorithm)
+            ciphertext <- SymmetricEncryption.encrypt(m, key, US_ASCII)
+            decrypted  <- SymmetricEncryption.decrypt(ciphertext, key, US_ASCII)
           } yield assert(decrypted)(equalTo(m))
         }
       }
