@@ -5,7 +5,7 @@
 | ![CI][Badge-CI] | [![Release Artifacts][Badge-SonatypeReleases]][Link-SonatypeReleases] | [![Snapshot Artifacts][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots] | [![Badge-Discord]][Link-Discord] |
 
 # Summary
-TODO: Tagline
+Fast, secure cryptographic primitives in a ZIO & ZIO Streams friendly package.
 
 # Documentation
 [zio-crypto Microsite](https://zio.github.io/zio-crypto/)
