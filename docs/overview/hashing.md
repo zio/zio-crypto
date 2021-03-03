@@ -29,14 +29,17 @@ Both `hash` and `verify` are implemented in terms of
 If you're using `MD5` or `SHA1`, you need to explicitly not recognize that
 the function you're calling is unsecure. To do so, use the function `zio.crypto.unsecure` as follows:
 ```scala
-import sun.nio.cs.US_ASCII
-import sun.security.provider.MD5
-unsecure(implicit s => Hash.hash[MD5]("hello", US_ASCII))
+import java.nio.charset.StandardCharsets.US_ASCII
+import zio.crypto.hash.{Hash, HashAlgorithm}
+import zio.crypto.unsecure
+
+unsecure(implicit s => Hash.hash[HashAlgorithm.MD5]("hello", US_ASCII))
 ```
 
 ## String Example
 ```scala
-import java.nio.charset.StandardCharsets._
+import java.nio.charset.StandardCharsets.US_ASCII
+import zio.crypto.hash.{Hash, HashAlgorithm}
 
 object Example extends zio.App {
   override def run(args: List[String]) = (for {
@@ -56,6 +59,9 @@ object Example extends zio.App {
 
 ## Byte Example
 ```scala
+import zio.crypto.hash.{Hash, HashAlgorithm}
+import zio.crypto.random.SecureRandom
+
 object Example extends zio.App {
   override def run(args: List[String]) = (for {
     m <- SecureRandom.nextBytes(10)
