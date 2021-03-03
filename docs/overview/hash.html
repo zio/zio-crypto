@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Hash · zio-crypto</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="The `Hash` environment provides basic 1-way hash functions."/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Hash · zio-crypto"/><meta property="og:type" content="website"/><meta property="og:url" content="https://zio.github.io/zio-crypto/"/><meta property="og:description" content="The `Hash` environment provides basic 1-way hash functions."/><meta property="og:image" content="https://zio.github.io/zio-crypto/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://zio.github.io/zio-crypto/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/zio-crypto/img/favicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="https://unpkg.com/vanilla-back-to-top@7.1.14/dist/vanilla-back-to-top.min.js"></script><script>
+        document.addEventListener('DOMContentLoaded', function() {
+          addBackToTop(
+            {"zIndex":100,"cornerOffset":100}
+          )
+        });
+        </script><script src="/zio-crypto/js/scrollSpy.js"></script><link rel="stylesheet" href="/zio-crypto/css/main.css"/><script src="/zio-crypto/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/zio-crypto/"><img class="logo" src="/zio-crypto/img/navbar_brand2x.png" alt="zio-crypto"/><h2 class="headerTitleWithLogo">zio-crypto</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/zio-crypto/docs/overview/overview_index" target="_self">Overview</a></li><li class=""><a href="/zio-crypto/docs/usecases/usecases_index" target="_self">Use Cases</a></li><li class=""><a href="/zio-crypto/docs/about/about_index" target="_self">About</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Overview</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Overview</h3><ul class=""><li class="navListItem"><a class="navItem" href="/zio-crypto/docs/overview/overview_index">Installation</a></li><li class="navListItem"><a class="navItem" href="/zio-crypto/docs/overview/secure_random">Secure Random</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/zio-crypto/docs/overview/hash">Hash</a></li><li class="navListItem"><a class="navItem" href="/zio-crypto/docs/overview/hmac">HMAC</a></li><li class="navListItem"><a class="navItem" href="/zio-crypto/docs/overview/symmetric_encryption">Symmetric Encryption</a></li><li class="navListItem"><a class="navItem" href="/zio-crypto/docs/overview/signature">Signature</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Hash</h1></header><article><div><span><p>The <code>Hash</code> environment provides basic 1-way hash functions.</p>
+<h2><a class="anchor" aria-hidden="true" id="algorithms"></a><a href="#algorithms" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Algorithms</h2>
+<p>We support MD5, SHA1, SHA256, SHA384, and SHA512.</p>
+<table>
+<thead>
+<tr><th>Function</th><th>Security (in bits) against collision attacks</th><th>Dangerous?</th></tr>
+</thead>
+<tbody>
+<tr><td>MD5</td><td>&lt;= 18 (collisions found)</td><td><em>DANGEROUS</em></td></tr>
+<tr><td>SHA1</td><td>&lt; 63 (collisions found)</td><td><em>DANGEROUS</em></td></tr>
+<tr><td>SHA256</td><td>128</td><td></td></tr>
+<tr><td>SHA384</td><td>192</td><td></td></tr>
+<tr><td>SHA512</td><td>256</td><td></td></tr>
+</tbody>
+</table>
+<h2><a class="anchor" aria-hidden="true" id="api"></a><a href="#api" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>API</h2>
+<p>There are two basic functions provided: <code>hash</code> and <code>verify</code>.
+For any message <code>m</code>, we have that <code>verify(m, hash(m)) == true</code>,
+and for any two messages <code>m1</code>and <code>m2</code> where <code>m1 != m2</code>,
+<code>verify(m1, hash(m2)) == false</code>.</p>
+<p>Both <code>hash</code> and <code>verify</code> are implemented in terms of
+<code>String</code> (provided you specify a <code>Charset</code>) and <code>Byte</code>.</p>
+<h2><a class="anchor" aria-hidden="true" id="secure"></a><a href="#secure" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Secure</h2>
+<p>If you're using <code>MD5</code> or <code>SHA1</code>, you need to explicitly not recognize that
+the function you're calling is unsecure. To do so, use the function <code>zio.crypto.unsecure</code> as follows:</p>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> java.nio.charset.<span class="hljs-type">StandardCharsets</span>.<span class="hljs-type">US_ASCII</span>
+<span class="hljs-keyword">import</span> zio.crypto.hash.{<span class="hljs-type">Hash</span>, <span class="hljs-type">HashAlgorithm</span>}
+<span class="hljs-keyword">import</span> zio.crypto.unsecure
+
+unsecure(<span class="hljs-keyword">implicit</span> s =&gt; <span class="hljs-type">Hash</span>.hash[<span class="hljs-type">HashAlgorithm</span>.<span class="hljs-type">MD5</span>](<span class="hljs-string">"hello"</span>, <span class="hljs-type">US_ASCII</span>))
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="string-example"></a><a href="#string-example" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>String Example</h2>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> java.nio.charset.<span class="hljs-type">StandardCharsets</span>.<span class="hljs-type">US_ASCII</span>
+<span class="hljs-keyword">import</span> zio.crypto.hash.{<span class="hljs-type">Hash</span>, <span class="hljs-type">HashAlgorithm</span>}
+
+<span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">Example</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">zio</span>.<span class="hljs-title">App</span> </span>{
+  <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">run</span></span>(args: <span class="hljs-type">List</span>[<span class="hljs-type">String</span>]) = (<span class="hljs-keyword">for</span> {
+    digest &lt;- <span class="hljs-type">Hash</span>.hash[<span class="hljs-type">HashAlgorithm</span>.<span class="hljs-type">SHA256</span>](
+      m = <span class="hljs-string">"hello"</span>,
+      charset = <span class="hljs-type">US_ASCII</span>
+    )
+    verified &lt;- <span class="hljs-type">Hash</span>.verify[<span class="hljs-type">HashAlgorithm</span>.<span class="hljs-type">SHA256</span>](
+      m = <span class="hljs-string">"hello"</span>,
+      digest = digest,
+      charset = <span class="hljs-type">US_ASCII</span>
+    )
+  } <span class="hljs-keyword">yield</span> verified).exitCode
+    .provideCustomLayer(<span class="hljs-type">Hash</span>.live)
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="byte-example"></a><a href="#byte-example" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Byte Example</h2>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> zio.crypto.hash.{<span class="hljs-type">Hash</span>, <span class="hljs-type">HashAlgorithm</span>}
+<span class="hljs-keyword">import</span> zio.crypto.random.<span class="hljs-type">SecureRandom</span>
+
+<span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">Example</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">zio</span>.<span class="hljs-title">App</span> </span>{
+  <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">run</span></span>(args: <span class="hljs-type">List</span>[<span class="hljs-type">String</span>]) = (<span class="hljs-keyword">for</span> {
+    m &lt;- <span class="hljs-type">SecureRandom</span>.nextBytes(<span class="hljs-number">10</span>)
+    digest &lt;- <span class="hljs-type">Hash</span>.hash[<span class="hljs-type">HashAlgorithm</span>.<span class="hljs-type">SHA256</span>](
+      m = m
+    )
+    verified &lt;- <span class="hljs-type">Hash</span>.verify[<span class="hljs-type">HashAlgorithm</span>.<span class="hljs-type">SHA256</span>](
+      m = m,
+      digest = digest
+    )
+  } <span class="hljs-keyword">yield</span> verified).exitCode
+    .provideCustomLayer(<span class="hljs-type">Hash</span>.live ++ <span class="hljs-type">SecureRandom</span>.live.orDie)
+}
+</code></pre>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/zio-crypto/docs/overview/secure_random"><span class="arrow-prev">← </span><span>Secure Random</span></a><a class="docs-next button" href="/zio-crypto/docs/overview/hmac"><span>HMAC</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#algorithms">Algorithms</a></li><li><a href="#api">API</a></li><li><a href="#secure">Secure</a></li><li><a href="#string-example">String Example</a></li><li><a href="#byte-example">Byte Example</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/zio-crypto/" class="nav-home"><img src="/zio-crypto/img/sidebar_brand2x.png" alt="zio-crypto"/></a><div><h5>GitHub</h5><a class="github-button" href="https://github.com/zio/zio-crypto" data-icon="octicon-star" data-count-href="/zio/zio-crypto/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div><div><h5>Chat with us on Discord</h5><a href="https://discord.gg/2ccFBr4"><img src="/zio-crypto//img/discord.png" width="120" alt="discord"/></a></div><div><h5>Additional resources</h5><a href="/zio-crypto/api/index.html">Scaladoc of zio-crypto</a></div></section><section class="copyright">Copyright © 2021 ZIO Maintainers</section></footer></div></body></html>
