@@ -23,16 +23,26 @@ and for any two messages `m1`and `m2` where `m1 != m2`,
 `verify(m1, hash(m2)) == false`.
 
 Both `hash` and `verify` are implemented in terms of 
-`String` (provided you specify a `Charset`) and `Byte`.
+`String` (provided you specify a `Charset`) and `Chunk[Byte]`.
 
-## Secure
-If you're using `MD5` or `SHA1`, you need to explicitly not recognize that
-the function you're calling is unsecure. To do so, use the function `zio.crypto.unsecure` as follows:
+## Usage
+To use the hashing service, simply call the method hash
+with a type parameter specifying the algorithm you wish
+to use.
 ```scala
 import java.nio.charset.StandardCharsets.US_ASCII
 import zio.crypto.hash.{Hash, HashAlgorithm}
-import zio.crypto.unsecure
+Hash.hash[HashAlgorithm.SHA256]("hello", US_ASCII)
+```
 
+However, we need to take special case when using algorithms
+marked *DANGEROUS* in the table above.
+
+### Secure
+If you're using `MD5` or `SHA1`, you need to explicitly not recognize that
+the function you're calling is unsecure. To do so, use the function `zio.crypto.unsecure` as follows:
+```scala
+import zio.crypto.unsecure
 unsecure(implicit s => Hash.hash[HashAlgorithm.MD5]("hello", US_ASCII))
 ```
 

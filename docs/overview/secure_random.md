@@ -10,9 +10,8 @@ We choose the system-default security Provider.
 
 ## Random Strings
 Strings generated from `SecureRandom` are base-64 encoded.
-Note that strings generated will be longer than the supplied number
-of characters, and that instead the caller specifies the number
-of bytes of entropy to include in the string.
+This encoding means that generated strings are longer than 
+the supplied `entropyBytes`.
 
 ```scala
 import zio.crypto.random.SecureRandom
@@ -34,7 +33,7 @@ object Example extends zio.App {
         randBytes <- SecureRandom.nextBytes(5)
         randString <- SecureRandom.nextString(5)
     } yield ExitCode.success)
-      .provideCustomLayer(SecureRandom.live)
+      .provideCustomLayer(SecureRandom.live.orDie)
     
 }
 ```
