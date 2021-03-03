@@ -22,7 +22,7 @@ const users = [
 
 const siteConfig = {
   title: 'zio-crypto',
-  tagline: 'TODO: Tagline',
+  tagline: 'Fast, secure cryptographic primitives in a ZIO-friendly package',
   url: 'https://zio.github.io',
   baseUrl: '/zio-crypto/',
 

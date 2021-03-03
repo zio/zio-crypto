@@ -91,35 +91,33 @@ class Index extends React.Component {
             </Container>
         );
 
-        const FeatureCallout = () => (
-            <div
-                className="productShowcaseSection paddingBottom"
-                style={{textAlign: 'center'}}>
-                <h2>Welcome to zio-crypto</h2>
-                <MarkdownBlock>
-                    TODO: Tagline
-                </MarkdownBlock>
-
-                <MarkdownBlock>
-                    TODO: Long description (paragraph)
-                </MarkdownBlock>
-            </div>
-        );
-
         const Features = () => (
             <Block layout="fourColumn">
                 {[
                     {
-                        content: 'TODO: Content 1',
-                        image: `${baseUrl}img/undraw_tweetstorm.svg`,
+                        title: 'Secure Random',
                         imageAlign: 'top',
-                        title: 'TODO: Title 1',
+                        content: 'Securely generate random data',
                     },
                     {
-                        content: 'TODO: Content 2',
-                        image: `${baseUrl}img/undraw_operating_system.svg`,
+                        title: 'Encryption',
                         imageAlign: 'top',
-                        title: 'TODO: Title 2',
+                        content: 'Encrypt and decrypt data with a single private key',
+                    },
+                    {
+                        title: 'Signatures',
+                        imageAlign: 'top',
+                        content: 'Sign data with a private key, and verify it with a public key',
+                    },
+                    {
+                        title: 'MACs',
+                        imageAlign: 'top',
+                        content: 'Verify authenticity and integrity of data',
+                    },
+                    {
+                        title: 'Hashing',
+                        imageAlign: 'top',
+                        content: 'Popular one-way hash algorithms',
                     },
                 ]}
             </Block>
@@ -130,7 +128,6 @@ class Index extends React.Component {
                 <HomeSplash siteConfig={siteConfig} language={language}/>
                 <div className="mainContainer">
                     <Features/>
-                    <FeatureCallout/>
                 </div>
             </div>
         );
