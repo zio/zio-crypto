@@ -8,6 +8,10 @@ import zio.crypto.ByteHelpers
 import zio.crypto.random.SecureRandom
 import zio.crypto.random.SecureRandom.SecureRandom
 
+import com.google.crypto.tink.signature.{SignatureConfig}
+import java.nio.charset.Charset
+import java.security.{KeyPairGenerator, PrivateKey, PublicKey, Signature => JSignature}
+
 case class SignatureObject[T](value: T) extends AnyVal
 sealed trait SignatureAlgorithm
 
@@ -37,64 +41,67 @@ object Signature {
     ): Task[Boolean]
   }
 
-  val live: ULayer[Signature] = ZLayer.succeed(new Service {
-
-    private def getAlgorithmName(alg: SignatureAlgorithm) = alg match {
-      case SignatureAlgorithm.ECDSASHA256 => "SHA256withECDSA"
-      case SignatureAlgorithm.ECDSASHA384 => "SHA384withECDSA"
-      case SignatureAlgorithm.ECDSASHA512 => "SHA512withECDSA"
-    }
-
-    def genKey(alg: SignatureAlgorithm): Task[SignatureKeyPair] = Task.effect {
-      val keyPairGenerator = KeyPairGenerator.getInstance("EC")
-      val keypair          = keyPairGenerator.generateKeyPair
-      SignatureKeyPair(
-        publicKey = SignaturePublicKey(keypair.getPublic, alg),
-        privateKey = SignaturePrivateKey(keypair.getPrivate, alg)
-      )
-    }
-
-    def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject[Chunk[Byte]]] =
-      SecureRandom.execute { random =>
-        val signature = JSignature.getInstance(getAlgorithmName(privateKey.algorithm))
-        signature.initSign(privateKey.key, random)
-        signature.update(m.toArray)
-        signature.sign
-      }
-        .map(s => SignatureObject(Chunk.fromArray(s)))
-
-    def verify(m: Chunk[Byte], signature: SignatureObject[Chunk[Byte]], publicKey: SignaturePublicKey): Task[Boolean] =
-      Task.effect {
-        val signatureBuilder = JSignature.getInstance(getAlgorithmName(publicKey.algorithm))
-        signatureBuilder.initVerify(publicKey.key)
-        signatureBuilder.update(m.toArray)
-        signatureBuilder.verify(signature.value.toArray)
+  val live: TaskLayer[Signature] = Task
+    .effect(SignatureConfig.register())
+    .as(new Service {
+      private def getAlgorithmName(alg: SignatureAlgorithm) = alg match {
+        case SignatureAlgorithm.ECDSASHA256 => "SHA256withECDSA"
+        case SignatureAlgorithm.ECDSASHA384 => "SHA384withECDSA"
+        case SignatureAlgorithm.ECDSASHA512 => "SHA512withECDSA"
       }
 
-    override def sign(
-      m: String,
-      privateKey: SignaturePrivateKey,
-      charset: Charset
-    ): RIO[SecureRandom, SignatureObject[String]] =
-      sign(Chunk.fromArray(m.getBytes(charset)), privateKey)
-        .map(x => SignatureObject(ByteHelpers.toB64String(x.value)))
-
-    override def verify(
-      m: String,
-      signature: SignatureObject[String],
-      publicKey: SignaturePublicKey,
-      charset: Charset
-    ): Task[Boolean] =
-      ByteHelpers.fromB64String(signature.value) match {
-        case Some(signatureBytes) =>
-          verify(
-            m = Chunk.fromArray(m.getBytes(charset)),
-            signature = SignatureObject(signatureBytes),
-            publicKey = publicKey
-          )
-        case _                    => UIO(false)
+      def genKey(alg: SignatureAlgorithm): Task[SignatureKeyPair] = Task.effect {
+        val keyPairGenerator = KeyPairGenerator.getInstance("EC")
+        val keypair          = keyPairGenerator.generateKeyPair
+        SignatureKeyPair(
+          publicKey = SignaturePublicKey(keypair.getPublic, alg),
+          privateKey = SignaturePrivateKey(keypair.getPrivate, alg)
+        )
       }
-  })
+
+      def sign(m: Chunk[Byte], privateKey: SignaturePrivateKey): RIO[SecureRandom, SignatureObject[Chunk[Byte]]] =
+        SecureRandom.execute { random =>
+          val signature = JSignature.getInstance(getAlgorithmName(privateKey.algorithm))
+          signature.initSign(privateKey.key, random)
+          signature.update(m.toArray)
+          signature.sign
+        }
+          .map(s => SignatureObject(Chunk.fromArray(s)))
+
+      def verify(m: Chunk[Byte], signature: SignatureObject[Chunk[Byte]], publicKey: SignaturePublicKey)
+        : Task[Boolean] =
+        Task.effect {
+          val signatureBuilder = JSignature.getInstance(getAlgorithmName(publicKey.algorithm))
+          signatureBuilder.initVerify(publicKey.key)
+          signatureBuilder.update(m.toArray)
+          signatureBuilder.verify(signature.value.toArray)
+        }
+
+      override def sign(
+        m: String,
+        privateKey: SignaturePrivateKey,
+        charset: Charset
+      ): RIO[SecureRandom, SignatureObject[String]] =
+        sign(Chunk.fromArray(m.getBytes(charset)), privateKey)
+          .map(x => SignatureObject(ByteHelpers.toB64String(x.value)))
+
+      override def verify(
+        m: String,
+        signature: SignatureObject[String],
+        publicKey: SignaturePublicKey,
+        charset: Charset
+      ): Task[Boolean] =
+        ByteHelpers.fromB64String(signature.value) match {
+          case Some(signatureBytes) =>
+            verify(
+              m = Chunk.fromArray(m.getBytes(charset)),
+              signature = SignatureObject(signatureBytes),
+              publicKey = publicKey
+            )
+          case _ => UIO(false)
+        }
+    })
+    .toLayer
 
   /**
    * Generates a keypair to use for signing and verifying messages.
