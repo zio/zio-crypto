@@ -1,13 +1,15 @@
 package zio.crypto.signature
 
-import com.google.crypto.tink.signature.{EcdsaSignKeyManager, Ed25519PrivateKeyManager, SignatureConfig}
-import com.google.crypto.tink.{PublicKeySign, PublicKeyVerify, KeyTemplate => TinkKeyTemplate}
+import java.nio.charset.Charset
+
+import scala.util.Try
+
+import com.google.crypto.tink.signature.{ EcdsaSignKeyManager, Ed25519PrivateKeyManager, SignatureConfig }
+import com.google.crypto.tink.{ KeyTemplate => TinkKeyTemplate, PublicKeySign, PublicKeyVerify }
+
 import zio._
 import zio.crypto.ByteHelpers
-import zio.crypto.keyset.{AsymmetricKeyset, KeyTemplate, PrivateKeyset, PublicKeyset}
-
-import java.nio.charset.Charset
-import scala.util.Try
+import zio.crypto.keyset.{ AsymmetricKeyset, KeyTemplate, PrivateKeyset, PublicKeyset }
 
 case class SignatureObject[T](value: T) extends AnyVal
 sealed trait SignatureAlgorithm
@@ -106,7 +108,7 @@ object Signature {
               signature = SignatureObject(signatureBytes),
               publicKey = publicKey
             )
-          case _ => UIO(false)
+          case _                    => UIO(false)
         }
     })
     .toLayer

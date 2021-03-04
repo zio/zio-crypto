@@ -1,5 +1,9 @@
 package zio.crypto.keyset
 
+import java.nio.file.Path
+
+import scala.annotation.implicitNotFound
+
 import com.google.crypto.tink.{
   CleartextKeysetHandle,
   JsonKeysetReader,
@@ -7,11 +11,9 @@ import com.google.crypto.tink.{
   KeysetHandle => TinkKeysetHandle,
   KeysetManager => TinkKeysetManager
 }
-import zio.crypto.Secure
-import zio.{Has, RIO, Task, ULayer, ZIO, ZLayer}
 
-import java.nio.file.Path
-import scala.annotation.implicitNotFound
+import zio.crypto.Secure
+import zio.{ Has, RIO, Task, ULayer, ZIO, ZLayer }
 
 object KeysetManager {
   type KeysetManager = Has[Service]

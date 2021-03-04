@@ -1,16 +1,15 @@
 package zio.crypto.mac
 
-import com.google.crypto.tink.mac.{HmacKeyManager, MacConfig}
-import com.google.crypto.tink.{Mac, KeyTemplate => TinkKeyTemplate}
-import zio._
-import zio.crypto.ByteHelpers
-import zio.crypto.keyset.{KeyTemplate, Keyset, SymmetricKeyset}
-
 import java.nio.charset.Charset
+
 import scala.util.Try
 
+import com.google.crypto.tink.mac.{ HmacKeyManager, MacConfig }
+import com.google.crypto.tink.{ KeyTemplate => TinkKeyTemplate, Mac }
+
 import zio._
 import zio.crypto.ByteHelpers
+import zio.crypto.keyset.{ KeyTemplate, Keyset, SymmetricKeyset }
 
 sealed trait HMACAlgorithm
 

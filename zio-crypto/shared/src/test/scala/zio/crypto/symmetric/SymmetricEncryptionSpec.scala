@@ -1,10 +1,10 @@
 package zio.crypto.symmetric
 
+import java.nio.charset.StandardCharsets.US_ASCII
+
 import zio.crypto.keyset.KeysetManager
 import zio.test.Assertion._
 import zio.test._
-
-import java.nio.charset.StandardCharsets.US_ASCII
 
 object SymmetricEncryptionSpec extends DefaultRunnableSpec {
 
