@@ -1,13 +1,13 @@
-package zio.crypto.symmetric
+package zio.crypto.encryption
 
 import java.nio.charset.Charset
 
-import com.google.crypto.tink.aead.{ AeadConfig, AesGcmKeyManager }
-import com.google.crypto.tink.{ Aead, KeyTemplate => TinkKeyTemplate }
+import com.google.crypto.tink.aead.{AeadConfig, AesGcmKeyManager}
+import com.google.crypto.tink.{Aead, KeyTemplate => TinkKeyTemplate}
 
 import zio._
 import zio.crypto.ByteHelpers
-import zio.crypto.keyset.{ KeyTemplate, Keyset, SymmetricKeyset }
+import zio.crypto.keyset.{KeyTemplate, Keyset, SymmetricKeyset}
 
 sealed trait SymmetricEncryptionAlgorithm
 
@@ -24,8 +24,6 @@ object SymmetricEncryptionAlgorithm {
         }
     }
 }
-
-case class CipherText[T](value: T) extends AnyVal
 
 object SymmetricEncryption {
   type SymmetricEncryption = Has[SymmetricEncryption.Service]
@@ -61,7 +59,7 @@ object SymmetricEncryption {
           case Some(b) =>
             decrypt(CipherText(b), key)
               .map(x => new String(x.toArray, charset))
-          case _       => Task.fail(new IllegalArgumentException("Ciphertext is not a base-64 encoded string"))
+          case _ => Task.fail(new IllegalArgumentException("Ciphertext is not a base-64 encoded string"))
         }
 
     })

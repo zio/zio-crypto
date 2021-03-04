@@ -1,4 +1,4 @@
-package zio.crypto.symmetric
+package zio.crypto.encryption
 
 import java.nio.charset.StandardCharsets.US_ASCII
 

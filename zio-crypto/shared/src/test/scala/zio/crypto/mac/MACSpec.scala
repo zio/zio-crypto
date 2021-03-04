@@ -18,8 +18,8 @@ object MACSpec extends DefaultRunnableSpec {
         checkM(Gen.anyASCIIString) { m =>
           for {
             k        <- KeysetManager.generateNewSymmetric(alg)
-            hmac     <- MAC.sign(m, k, US_ASCII)
-            verified <- MAC.verify(m, hmac, k, US_ASCII)
+            mac      <- MAC.sign(m, k, US_ASCII)
+            verified <- MAC.verify(m, mac, k, US_ASCII)
           } yield assert(verified)(isTrue)
         }
       },
@@ -36,8 +36,8 @@ object MACSpec extends DefaultRunnableSpec {
           for {
             k0       <- KeysetManager.generateNewSymmetric(alg)
             k1       <- KeysetManager.generateNewSymmetric(alg)
-            hmac     <- MAC.sign(m, k0, US_ASCII)
-            verified <- MAC.verify(m, hmac, k1, US_ASCII)
+            mac      <- MAC.sign(m, k0, US_ASCII)
+            verified <- MAC.verify(m, mac, k1, US_ASCII)
           } yield assert(verified)(isFalse)
         }
       },
@@ -46,8 +46,8 @@ object MACSpec extends DefaultRunnableSpec {
           case (m0, m1) if m0 != m1 =>
             for {
               k        <- KeysetManager.generateNewSymmetric(alg)
-              hmac     <- MAC.sign(m1, k, US_ASCII)
-              verified <- MAC.verify(m0, hmac, k, US_ASCII)
+              mac      <- MAC.sign(m1, k, US_ASCII)
+              verified <- MAC.verify(m0, mac, k, US_ASCII)
             } yield assert(verified)(isFalse)
           case _ => assertCompletesM
         }
@@ -58,8 +58,8 @@ object MACSpec extends DefaultRunnableSpec {
         checkM(genByteChunk) { m =>
           for {
             k        <- KeysetManager.generateNewSymmetric(alg)
-            hmac     <- MAC.sign(m, k)
-            verified <- MAC.verify(m, hmac, k)
+            mac      <- MAC.sign(m, k)
+            verified <- MAC.verify(m, mac, k)
           } yield assert(verified)(isTrue)
         }
       },
@@ -76,8 +76,8 @@ object MACSpec extends DefaultRunnableSpec {
           for {
             k0       <- KeysetManager.generateNewSymmetric(alg)
             k1       <- KeysetManager.generateNewSymmetric(alg)
-            hmac     <- MAC.sign(m, k0)
-            verified <- MAC.verify(m, hmac, k1)
+            mac      <- MAC.sign(m, k0)
+            verified <- MAC.verify(m, mac, k1)
           } yield assert(verified)(isFalse)
         }
       },
@@ -86,8 +86,8 @@ object MACSpec extends DefaultRunnableSpec {
           case (m0, m1) if m0 != m1 =>
             for {
               k        <- KeysetManager.generateNewSymmetric(alg)
-              hmac     <- MAC.sign(m1, k)
-              verified <- MAC.verify(m0, hmac, k)
+              mac      <- MAC.sign(m1, k)
+              verified <- MAC.verify(m0, mac, k)
             } yield assert(verified)(isFalse)
           case _ => assertCompletesM
         }
