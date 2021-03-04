@@ -4,7 +4,7 @@ import com.google.crypto.tink.aead.{AeadConfig, AesGcmKeyManager}
 import com.google.crypto.tink.{Aead, KeyTemplate => TinkKeyTemplate}
 import zio._
 import zio.crypto.ByteHelpers
-import zio.crypto.keyset.{KeyTemplate, KeysetHandle, SymmetricKeyset}
+import zio.crypto.keyset.{KeyTemplate, Keyset, SymmetricKeyset}
 
 import java.nio.charset.Charset
 import javax.crypto.SecretKey
@@ -17,8 +17,6 @@ object SymmetricEncryptionAlgorithm {
 
   implicit val template: KeyTemplate[SymmetricEncryptionAlgorithm] with SymmetricKeyset[SymmetricEncryptionAlgorithm] =
     new KeyTemplate[SymmetricEncryptionAlgorithm] with SymmetricKeyset[SymmetricEncryptionAlgorithm] {
-      override def templateURL: String = "type.googleapis.com/google.crypto.tink.AESKey???"
-
       override def getTinkKeyTemplate(a: SymmetricEncryptionAlgorithm): TinkKeyTemplate =
         a match {
           case SymmetricEncryptionAlgorithm.AES128GCM => AesGcmKeyManager.aes128GcmTemplate()
@@ -32,7 +30,7 @@ case class SymmetricEncryptionKey(value: SecretKey) extends AnyVal
 
 object SymmetricEncryption {
   type SymmetricEncryption = Has[SymmetricEncryption.Service]
-  type KEY                 = KeysetHandle[SymmetricEncryptionAlgorithm]
+  type KEY                 = Keyset[SymmetricEncryptionAlgorithm]
 
   trait Service {
     def encrypt(plainText: Chunk[Byte], key: KEY): Task[CipherText[Chunk[Byte]]]

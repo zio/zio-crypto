@@ -16,7 +16,7 @@ object SignatureSpec extends DefaultRunnableSpec {
         checkM(Gen.chunkOf(Gen.anyByte)) { m =>
           for {
             k         <- KeysetManager.generateNewAsymmetric(alg)
-            signature <- Signature.sign(m, k.fullKeyset)
+            signature <- Signature.sign(m, k)
             verified  <- Signature.verify(m, signature, k.publicKeyset)
           } yield assert(verified)(isTrue)
         }
@@ -26,7 +26,7 @@ object SignatureSpec extends DefaultRunnableSpec {
           case (m0, m1) if m0 != m1 =>
             for {
               k         <- KeysetManager.generateNewAsymmetric(alg)
-              signature <- Signature.sign(m0, k.fullKeyset)
+              signature <- Signature.sign(m0, k)
               verified  <- Signature.verify(m1, signature, k.publicKeyset)
             } yield assert(verified)(isFalse)
           case _                    => assertCompletesM
@@ -38,7 +38,7 @@ object SignatureSpec extends DefaultRunnableSpec {
         checkM(Gen.anyASCIIString) { m =>
           for {
             k         <- KeysetManager.generateNewAsymmetric(alg)
-            signature <- Signature.sign(m, k.fullKeyset, US_ASCII)
+            signature <- Signature.sign(m, k, US_ASCII)
             verified  <- Signature.verify(m, signature, k.publicKeyset, US_ASCII)
           } yield assert(verified)(isTrue)
         }
@@ -48,7 +48,7 @@ object SignatureSpec extends DefaultRunnableSpec {
           case (m0, m1) if m0 != m1 =>
             for {
               k         <- KeysetManager.generateNewAsymmetric(alg)
-              signature <- Signature.sign(m0, k.fullKeyset, US_ASCII)
+              signature <- Signature.sign(m0, k, US_ASCII)
               verified  <- Signature.verify(m1, signature, k.publicKeyset, US_ASCII)
             } yield assert(verified)(isFalse)
           case _                    => assertCompletesM

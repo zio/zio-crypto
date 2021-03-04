@@ -4,7 +4,7 @@ import com.google.crypto.tink.mac.{HmacKeyManager, MacConfig}
 import com.google.crypto.tink.{Mac, KeyTemplate => TinkKeyTemplate}
 import zio._
 import zio.crypto.ByteHelpers
-import zio.crypto.keyset.{KeyTemplate, KeysetHandle, SymmetricKeyset}
+import zio.crypto.keyset.{KeyTemplate, Keyset, SymmetricKeyset}
 
 import java.nio.charset.Charset
 import scala.util.Try
@@ -22,8 +22,6 @@ object HMACAlgorithm {
 
   implicit val template: KeyTemplate[HMACAlgorithm] with SymmetricKeyset[HMACAlgorithm] =
     new KeyTemplate[HMACAlgorithm] with SymmetricKeyset[HMACAlgorithm] {
-      override def templateURL: String = "type.googleapis.com/google.crypto.tink.HmacKey"
-
       override def getTinkKeyTemplate(a: HMACAlgorithm): TinkKeyTemplate =
         a match {
           case HMACAlgorithm.HMACSHA256           => HmacKeyManager.hmacSha256Template()
@@ -41,18 +39,18 @@ object HMAC {
   type HMAC = Has[HMAC.Service]
 
   trait Service {
-    def sign(m: Chunk[Byte], k: KeysetHandle[HMACAlgorithm]): HMACObject[Chunk[Byte]]
-    def verify(m: Chunk[Byte], hmac: HMACObject[Chunk[Byte]], k: KeysetHandle[HMACAlgorithm]): Boolean
+    def sign(m: Chunk[Byte], k: Keyset[HMACAlgorithm]): HMACObject[Chunk[Byte]]
+    def verify(m: Chunk[Byte], hmac: HMACObject[Chunk[Byte]], k: Keyset[HMACAlgorithm]): Boolean
 
-    def sign(m: String, k: KeysetHandle[HMACAlgorithm], charset: Charset): HMACObject[String]
-    def verify(m: String, hmac: HMACObject[String], k: KeysetHandle[HMACAlgorithm], charset: Charset): Boolean
+    def sign(m: String, k: Keyset[HMACAlgorithm], charset: Charset): HMACObject[String]
+    def verify(m: String, hmac: HMACObject[String], k: Keyset[HMACAlgorithm], charset: Charset): Boolean
   }
 
   val live: TaskLayer[HMAC] = Task
     .effect(MacConfig.register())
     .as {
       new Service {
-        override def sign(m: Chunk[Byte], k: KeysetHandle[HMACAlgorithm]): HMACObject[Chunk[Byte]] =
+        override def sign(m: Chunk[Byte], k: Keyset[HMACAlgorithm]): HMACObject[Chunk[Byte]] =
           HMACObject(
             Chunk.fromArray(
               k.handle.getPrimitive(classOf[Mac]).computeMac(m.toArray)
@@ -62,14 +60,14 @@ object HMAC {
         override def verify(
           m: Chunk[Byte],
           hmac: HMACObject[Chunk[Byte]],
-          k: KeysetHandle[HMACAlgorithm]
+          k: Keyset[HMACAlgorithm]
         ): Boolean =
           Try(k.handle.getPrimitive(classOf[Mac]).verifyMac(hmac.value.toArray, m.toArray))
             .map(_ => true)
             .toOption
             .getOrElse(false)
 
-        override def sign(m: String, k: KeysetHandle[HMACAlgorithm], charset: Charset): HMACObject[String] =
+        override def sign(m: String, k: Keyset[HMACAlgorithm], charset: Charset): HMACObject[String] =
           HMACObject(
             ByteHelpers.toB64String(
               sign(
@@ -82,8 +80,7 @@ object HMAC {
             )
           )
 
-        override def verify(m: String, hmac: HMACObject[String], k: KeysetHandle[HMACAlgorithm], charset: Charset)
-          : Boolean =
+        override def verify(m: String, hmac: HMACObject[String], k: Keyset[HMACAlgorithm], charset: Charset): Boolean =
           ByteHelpers
             .fromB64String(hmac.value)
             .exists(d =>
@@ -108,7 +105,7 @@ object HMAC {
    * @param k: the secret key to use for signing
    * @return the HMAC of `m`
    */
-  def sign(m: Chunk[Byte], k: KeysetHandle[HMACAlgorithm]): RIO[HMAC, HMACObject[Chunk[Byte]]] =
+  def sign(m: Chunk[Byte], k: Keyset[HMACAlgorithm]): RIO[HMAC, HMACObject[Chunk[Byte]]] =
     ZIO.access(_.get.sign(m, k))
 
   /**
@@ -119,7 +116,7 @@ object HMAC {
    * @param k: the secret key used for signing.
    * @return true if `hmac` is a valid HMAC for `m` under `k`, and false otherwise.
    */
-  def verify(m: Chunk[Byte], hmac: HMACObject[Chunk[Byte]], k: KeysetHandle[HMACAlgorithm]): RIO[HMAC, Boolean] =
+  def verify(m: Chunk[Byte], hmac: HMACObject[Chunk[Byte]], k: Keyset[HMACAlgorithm]): RIO[HMAC, Boolean] =
     ZIO.access(_.get.verify(m, hmac, k))
 
   /**
@@ -130,7 +127,7 @@ object HMAC {
    * @param charset: the `Charset` of `m`.
    * @return the HMAC of `m`
    */
-  def sign(m: String, k: KeysetHandle[HMACAlgorithm], charset: Charset): RIO[HMAC, HMACObject[String]] =
+  def sign(m: String, k: Keyset[HMACAlgorithm], charset: Charset): RIO[HMAC, HMACObject[String]] =
     ZIO.access(_.get.sign(m, k, charset))
 
   /**
@@ -145,7 +142,7 @@ object HMAC {
   def verify(
     m: String,
     hmac: HMACObject[String],
-    k: KeysetHandle[HMACAlgorithm],
+    k: Keyset[HMACAlgorithm],
     charset: Charset
   ): RIO[HMAC, Boolean] =
     ZIO.access(_.get.verify(m, hmac, k, charset))

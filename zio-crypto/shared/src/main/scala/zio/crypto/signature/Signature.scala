@@ -4,7 +4,7 @@ import com.google.crypto.tink.signature.{EcdsaSignKeyManager, Ed25519PrivateKeyM
 import com.google.crypto.tink.{PublicKeySign, PublicKeyVerify, KeyTemplate => TinkKeyTemplate}
 import zio._
 import zio.crypto.ByteHelpers
-import zio.crypto.keyset.{AsymmetricKeyset, KeyTemplate, PrivateKeysetHandle, PublicKeysetHandle}
+import zio.crypto.keyset.{AsymmetricKeyset, KeyTemplate, PrivateKeyset, PublicKeyset}
 
 import java.nio.charset.Charset
 import scala.util.Try
@@ -18,8 +18,6 @@ object SignatureAlgorithm {
 
   implicit val template: KeyTemplate[SignatureAlgorithm] with AsymmetricKeyset[SignatureAlgorithm] =
     new KeyTemplate[SignatureAlgorithm] with AsymmetricKeyset[SignatureAlgorithm] {
-      override def templateURL: String = "type.googleapis.com/google.crypto.tink.Signature???"
-
       override def getTinkKeyTemplate(a: SignatureAlgorithm): TinkKeyTemplate =
         a match {
           case SignatureAlgorithm.ECDSA_P256 => EcdsaSignKeyManager.ecdsaP256Template()
@@ -34,22 +32,22 @@ object Signature {
   trait Service {
     def sign(
       m: Chunk[Byte],
-      privateKey: PrivateKeysetHandle[SignatureAlgorithm]
+      privateKey: PrivateKeyset[SignatureAlgorithm]
     ): Task[SignatureObject[Chunk[Byte]]]
     def sign(
       m: String,
-      privateKey: PrivateKeysetHandle[SignatureAlgorithm],
+      privateKey: PrivateKeyset[SignatureAlgorithm],
       charset: Charset
     ): Task[SignatureObject[String]]
     def verify(
       m: Chunk[Byte],
       signature: SignatureObject[Chunk[Byte]],
-      publicKey: PublicKeysetHandle[SignatureAlgorithm]
+      publicKey: PublicKeyset[SignatureAlgorithm]
     ): Task[Boolean]
     def verify(
       m: String,
       signature: SignatureObject[String],
-      publicKey: PublicKeysetHandle[SignatureAlgorithm],
+      publicKey: PublicKeyset[SignatureAlgorithm],
       charset: Charset
     ): Task[Boolean]
   }
@@ -59,7 +57,7 @@ object Signature {
     .as(new Service {
       def sign(
         m: Chunk[Byte],
-        privateKey: PrivateKeysetHandle[SignatureAlgorithm]
+        privateKey: PrivateKeyset[SignatureAlgorithm]
       ): Task[SignatureObject[Chunk[Byte]]] =
         Task.effect(
           SignatureObject(
@@ -74,7 +72,7 @@ object Signature {
       def verify(
         m: Chunk[Byte],
         signature: SignatureObject[Chunk[Byte]],
-        publicKey: PublicKeysetHandle[SignatureAlgorithm]
+        publicKey: PublicKeyset[SignatureAlgorithm]
       ): Task[Boolean] =
         Task.effect {
           Try(
@@ -89,7 +87,7 @@ object Signature {
 
       override def sign(
         m: String,
-        privateKey: PrivateKeysetHandle[SignatureAlgorithm],
+        privateKey: PrivateKeyset[SignatureAlgorithm],
         charset: Charset
       ): Task[SignatureObject[String]] =
         sign(Chunk.fromArray(m.getBytes(charset)), privateKey)
@@ -98,7 +96,7 @@ object Signature {
       override def verify(
         m: String,
         signature: SignatureObject[String],
-        publicKey: PublicKeysetHandle[SignatureAlgorithm],
+        publicKey: PublicKeyset[SignatureAlgorithm],
         charset: Charset
       ): Task[Boolean] =
         ByteHelpers.fromB64String(signature.value) match {
@@ -122,7 +120,7 @@ object Signature {
    */
   def sign(
     m: Chunk[Byte],
-    privateKey: PrivateKeysetHandle[SignatureAlgorithm]
+    privateKey: PrivateKeyset[SignatureAlgorithm]
   ): RIO[Signature, SignatureObject[Chunk[Byte]]] =
     ZIO.accessM(_.get.sign(m, privateKey))
 
@@ -136,7 +134,7 @@ object Signature {
    */
   def sign(
     m: String,
-    privateKey: PrivateKeysetHandle[SignatureAlgorithm],
+    privateKey: PrivateKeyset[SignatureAlgorithm],
     charset: Charset
   ): RIO[Signature, SignatureObject[String]] =
     ZIO.accessM(_.get.sign(m, privateKey, charset))
@@ -152,7 +150,7 @@ object Signature {
   def verify(
     m: Chunk[Byte],
     signature: SignatureObject[Chunk[Byte]],
-    publicKey: PublicKeysetHandle[SignatureAlgorithm]
+    publicKey: PublicKeyset[SignatureAlgorithm]
   ): RIO[Signature, Boolean] =
     ZIO.accessM(_.get.verify(m, signature, publicKey))
 
@@ -168,7 +166,7 @@ object Signature {
   def verify(
     m: String,
     signature: SignatureObject[String],
-    publicKey: PublicKeysetHandle[SignatureAlgorithm],
+    publicKey: PublicKeyset[SignatureAlgorithm],
     charset: Charset
   ): RIO[Signature, Boolean] =
     ZIO.accessM(_.get.verify(m, signature, publicKey, charset))
