@@ -13,7 +13,7 @@ object SymmetricEncryptionSpec extends DefaultRunnableSpec {
       testM("encrypt(m, k) != encrypt(m, k)") {
         checkM(Gen.chunkOf(Gen.anyByte)) { m =>
           for {
-            key         <- KeysetManager.generateNew(algorithm)
+            key         <- KeysetManager.generateNewSymmetric(algorithm)
             ciphertext1 <- SymmetricEncryption.encrypt(m, key)
             ciphertext2 <- SymmetricEncryption.encrypt(m, key)
           } yield assert(ciphertext1)(not(equalTo(ciphertext2)))
@@ -22,7 +22,7 @@ object SymmetricEncryptionSpec extends DefaultRunnableSpec {
       testM("decrypt(encrypt(m, k), k) == m") {
         checkM(Gen.chunkOf(Gen.anyByte)) { m =>
           for {
-            key        <- KeysetManager.generateNew(algorithm)
+            key        <- KeysetManager.generateNewSymmetric(algorithm)
             ciphertext <- SymmetricEncryption.encrypt(m, key)
             decrypted  <- SymmetricEncryption.decrypt(ciphertext, key)
           } yield assert(decrypted)(equalTo(m))
@@ -33,7 +33,7 @@ object SymmetricEncryptionSpec extends DefaultRunnableSpec {
       testM("encrypt(m, k) != encrypt(m, k)") {
         checkM(Gen.anyASCIIString) { m =>
           for {
-            key         <- KeysetManager.generateNew(algorithm)
+            key         <- KeysetManager.generateNewSymmetric(algorithm)
             ciphertext1 <- SymmetricEncryption.encrypt(m, key, US_ASCII)
             ciphertext2 <- SymmetricEncryption.encrypt(m, key, US_ASCII)
           } yield assert(ciphertext1)(not(equalTo(ciphertext2)))
@@ -42,7 +42,7 @@ object SymmetricEncryptionSpec extends DefaultRunnableSpec {
       testM("decrypt(encrypt(m, k), k) == m") {
         checkM(Gen.anyASCIIString) { m =>
           for {
-            key        <- KeysetManager.generateNew(algorithm)
+            key        <- KeysetManager.generateNewSymmetric(algorithm)
             ciphertext <- SymmetricEncryption.encrypt(m, key, US_ASCII)
             decrypted  <- SymmetricEncryption.decrypt(ciphertext, key, US_ASCII)
           } yield assert(decrypted)(equalTo(m))

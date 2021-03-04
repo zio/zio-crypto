@@ -5,12 +5,12 @@ import com.google.crypto.tink.{
   CleartextKeysetHandle,
   JsonKeysetReader,
   JsonKeysetWriter,
+  KeyTemplate => TinkKeyTemplate,
   KeysetHandle => TinkKeysetHandle,
   KeysetManager => TinkKeysetManager
 }
 import zio.crypto.Secure
 import zio.{Has, RIO, Task, ULayer, ZIO, ZLayer}
-import com.google.crypto.tink.{KeyTemplate => TinkKeyTemplate}
 
 import java.nio.file.Path
 import scala.annotation.implicitNotFound
@@ -27,9 +27,12 @@ object KeyStatus {
 final case class KeyId(value: Int) extends AnyVal
 final case class KeyInfo[Parent, Child <: Parent](id: KeyId, status: KeyStatus, url: String)
 
-class ZKeysetHandle[Family](handle: TinkKeysetHandle)(implicit val template: KeyTemplate[Family]) {
-  private[crypto] def keysetHandle = handle
+trait AsymmetricKeyset[-Family]
+trait SymmetricKeyset[-Family]
 
+class KeysetHandle[Family](
+  private[crypto] val handle: TinkKeysetHandle
+)(implicit val template: KeyTemplate[Family]) {
   lazy val keys: Seq[KeyInfo[Nothing, Nothing]] = handle.getKeysetInfo.getKeyInfoList.asScala.toSeq.map(x =>
     KeyInfo(
       id = KeyId(x.getKeyId),
@@ -45,6 +48,19 @@ class ZKeysetHandle[Family](handle: TinkKeysetHandle)(implicit val template: Key
   )
 }
 
+final class PublicKeysetHandle[Family](private[crypto] override val handle: TinkKeysetHandle)(implicit
+  override val template: KeyTemplate[Family]
+) extends KeysetHandle[Family](handle)
+
+final class PrivateKeysetHandle[Family](private[crypto] override val handle: TinkKeysetHandle)(implicit
+  override val template: KeyTemplate[Family]
+) extends KeysetHandle[Family](handle)
+
+final case class PublicPrivateKeysetHandle[Family](
+  publicKeyset: PublicKeysetHandle[Family],
+  fullKeyset: PrivateKeysetHandle[Family]
+)(implicit val template: KeyTemplate[Family])
+
 trait KeyTemplate[Family] {
   def templateURL: String
   def getTinkKeyTemplate(algorithm: Family): TinkKeyTemplate
@@ -54,69 +70,85 @@ object KeysetManager {
   type KeysetManager = Has[Service]
 
   trait Service {
-    def generateNew[Family, A <: Family](alg: A)(implicit t: KeyTemplate[Family]): Task[ZKeysetHandle[Family]]
+    def generateNewAsymmetric[Family, A <: Family](alg: A)(implicit
+      t: KeyTemplate[Family] with AsymmetricKeyset[Family]
+    ): Task[PublicPrivateKeysetHandle[Family]]
+    def generateNewSymmetric[Family, A <: Family](alg: A)(implicit
+      t: KeyTemplate[Family] with SymmetricKeyset[Family]
+    ): Task[KeysetHandle[Family]]
     def readFromFile[Family](path: Path)(implicit
-      secure: Secure[ZKeysetHandle[Family]],
+      secure: Secure[KeysetHandle[Family]],
       template: KeyTemplate[Family]
-    ): Task[ZKeysetHandle[Family]]
-    def saveToFile[Family](key: ZKeysetHandle[Family], path: Path)(implicit
-      secure: Secure[ZKeysetHandle[Family]]
+    ): Task[KeysetHandle[Family]]
+    def saveToFile[Family](key: KeysetHandle[Family], path: Path)(implicit
+      secure: Secure[KeysetHandle[Family]]
     ): Task[Unit]
-    def add[Family, Algorithm <: Family](key: ZKeysetHandle[Family], alg: Algorithm): Task[ZKeysetHandle[Family]]
-    def enable[Family](key: ZKeysetHandle[Family], id: KeyId): Task[ZKeysetHandle[Family]]
-    def disable[Family](key: ZKeysetHandle[Family], id: KeyId): Task[ZKeysetHandle[Family]]
-    def setPrimary[Family](key: ZKeysetHandle[Family], id: KeyId): Task[ZKeysetHandle[Family]]
-    def delete[Family](key: ZKeysetHandle[Family], id: KeyId): Task[ZKeysetHandle[Family]]
-    def destroy[Family](key: ZKeysetHandle[Family], id: KeyId): Task[ZKeysetHandle[Family]]
+    def add[Family, Algorithm <: Family](key: KeysetHandle[Family], alg: Algorithm): Task[KeysetHandle[Family]]
+    def enable[Family](key: KeysetHandle[Family], id: KeyId): Task[KeysetHandle[Family]]
+    def disable[Family](key: KeysetHandle[Family], id: KeyId): Task[KeysetHandle[Family]]
+    def setPrimary[Family](key: KeysetHandle[Family], id: KeyId): Task[KeysetHandle[Family]]
+    def delete[Family](key: KeysetHandle[Family], id: KeyId): Task[KeysetHandle[Family]]
+    def destroy[Family](key: KeysetHandle[Family], id: KeyId): Task[KeysetHandle[Family]]
   }
 
   val live: ULayer[KeysetManager] = ZLayer.succeed(new Service {
-    override def saveToFile[Alg](key: ZKeysetHandle[Alg], path: Path)(implicit
-      secure: Secure[ZKeysetHandle[Alg]]
+    override def saveToFile[Alg](key: KeysetHandle[Alg], path: Path)(implicit
+      secure: Secure[KeysetHandle[Alg]]
     ): Task[Unit] =
       Task
         .effect(
-          CleartextKeysetHandle.write(key.keysetHandle, JsonKeysetWriter.withFile(path.toFile))
+          CleartextKeysetHandle.write(key.handle, JsonKeysetWriter.withFile(path.toFile))
         )
 
     override def readFromFile[Family](path: Path)(implicit
-      secure: Secure[ZKeysetHandle[Family]],
+      secure: Secure[KeysetHandle[Family]],
       template: KeyTemplate[Family]
-    ): Task[ZKeysetHandle[Family]] =
-      Task.effect(new ZKeysetHandle(CleartextKeysetHandle.read(JsonKeysetReader.withFile(path.toFile))))
+    ): Task[KeysetHandle[Family]] =
+      Task.effect(new KeysetHandle(CleartextKeysetHandle.read(JsonKeysetReader.withFile(path.toFile))))
 
     private def copy[Family](
-      key: ZKeysetHandle[Family],
+      key: KeysetHandle[Family],
       fn: TinkKeysetManager => TinkKeysetManager
-    ): Task[ZKeysetHandle[Family]] =
+    ): Task[KeysetHandle[Family]] =
       Task.effect {
-        new ZKeysetHandle[Family](
-          fn(TinkKeysetManager.withKeysetHandle(key.keysetHandle)).getKeysetHandle
+        new KeysetHandle[Family](
+          fn(TinkKeysetManager.withKeysetHandle(key.handle)).getKeysetHandle
         )(key.template)
       }
 
-    override def add[Family, A <: Family](key: ZKeysetHandle[Family], algorithm: A): Task[ZKeysetHandle[Family]] =
+    override def add[Family, A <: Family](key: KeysetHandle[Family], algorithm: A): Task[KeysetHandle[Family]] =
       copy[Family](key, _.add(key.template.getTinkKeyTemplate(algorithm)))
 
-    override def enable[Family](key: ZKeysetHandle[Family], id: KeyId): Task[ZKeysetHandle[Family]] =
+    override def enable[Family](key: KeysetHandle[Family], id: KeyId): Task[KeysetHandle[Family]] =
       copy[Family](key, _.enable(id.value))
 
-    override def setPrimary[Family](key: ZKeysetHandle[Family], id: KeyId): Task[ZKeysetHandle[Family]] =
+    override def setPrimary[Family](key: KeysetHandle[Family], id: KeyId): Task[KeysetHandle[Family]] =
       copy[Family](key, _.setPrimary(id.value))
 
-    override def disable[Family](key: ZKeysetHandle[Family], id: KeyId): Task[ZKeysetHandle[Family]] =
+    override def disable[Family](key: KeysetHandle[Family], id: KeyId): Task[KeysetHandle[Family]] =
       copy[Family](key, _.disable(id.value))
 
-    override def delete[Family](key: ZKeysetHandle[Family], id: KeyId): Task[ZKeysetHandle[Family]] =
+    override def delete[Family](key: KeysetHandle[Family], id: KeyId): Task[KeysetHandle[Family]] =
       copy[Family](key, _.delete(id.value))
 
-    override def destroy[Family](key: ZKeysetHandle[Family], id: KeyId): Task[ZKeysetHandle[Family]] =
+    override def destroy[Family](key: KeysetHandle[Family], id: KeyId): Task[KeysetHandle[Family]] =
       copy[Family](key, _.destroy(id.value))
 
-    override def generateNew[Family, A <: Family](alg: A)(implicit
-      template: KeyTemplate[Family]
-    ): Task[ZKeysetHandle[Family]] =
-      Task.effect(new ZKeysetHandle(TinkKeysetHandle.generateNew(template.getTinkKeyTemplate(alg))))
+    override def generateNewSymmetric[Family, A <: Family](alg: A)(implicit
+      t: KeyTemplate[Family] with SymmetricKeyset[Family]
+    ): Task[KeysetHandle[Family]] =
+      Task.effect(new KeysetHandle(TinkKeysetHandle.generateNew(t.getTinkKeyTemplate(alg))))
+
+    override def generateNewAsymmetric[Family, A <: Family](alg: A)(implicit
+      t: KeyTemplate[Family] with AsymmetricKeyset[Family]
+    ): Task[PublicPrivateKeysetHandle[Family]] =
+      Task.effect {
+        val full = new KeysetHandle(TinkKeysetHandle.generateNew(t.getTinkKeyTemplate(alg)))
+        PublicPrivateKeysetHandle[Family](
+          publicKeyset = new PublicKeysetHandle(full.handle.getPublicKeysetHandle),
+          fullKeyset = new PrivateKeysetHandle(full.handle)
+        )
+      }
 
   })
 
@@ -127,46 +159,51 @@ object KeysetManager {
         "If you'd like to proceed anyhow, wrap this call as follows:\n" +
         "  unsecure(implicit s => m.readFromFile(p))"
     )
-    secure: Secure[ZKeysetHandle[Family]],
+    secure: Secure[KeysetHandle[Family]],
     template: KeyTemplate[Family]
-  ): RIO[KeysetManager, ZKeysetHandle[Family]] =
+  ): RIO[KeysetManager, KeysetHandle[Family]] =
     ZIO.accessM(_.get.readFromFile(path))
 
-  def saveToFile[Family](key: ZKeysetHandle[Family], path: Path)(implicit
+  def saveToFile[Family](key: KeysetHandle[Family], path: Path)(implicit
     @implicitNotFound(
       "Storing cleartext keysets on disk is not recommended. " +
         "Prefer to encrypt your key first. " +
         "If you'd like to proceed anyhow, wrap this call as follows:\n" +
         "  unsecure(implicit s => m.saveToFile(k, p))"
     )
-    secure: Secure[ZKeysetHandle[Family]],
+    secure: Secure[KeysetHandle[Family]],
     template: KeyTemplate[Family]
   ): RIO[KeysetManager, Unit] = ZIO.accessM(_.get.saveToFile(key, path))
 
-  def generateNew[Family, A <: Family](alg: A)(implicit
-    t: KeyTemplate[Family]
-  ): RIO[KeysetManager, ZKeysetHandle[Family]] =
-    ZIO.accessM(_.get.generateNew(alg))
+  def generateNewSymmetric[Family, A <: Family](alg: A)(implicit
+    t: KeyTemplate[Family] with SymmetricKeyset[Family]
+  ): RIO[KeysetManager, KeysetHandle[Family]] =
+    ZIO.accessM(_.get.generateNewSymmetric(alg))
+
+  def generateNewAsymmetric[Family, A <: Family](alg: A)(implicit
+    t: KeyTemplate[Family] with AsymmetricKeyset[Family]
+  ): RIO[KeysetManager, PublicPrivateKeysetHandle[Family]] =
+    ZIO.accessM(_.get.generateNewAsymmetric(alg))
 
   def add[Family, Algorithm <: Family](
-    key: ZKeysetHandle[Family],
+    key: KeysetHandle[Family],
     alg: Algorithm
-  ): RIO[KeysetManager, ZKeysetHandle[Family]] =
+  ): RIO[KeysetManager, KeysetHandle[Family]] =
     ZIO.accessM(_.get.add(key, alg))
 
-  def enable[Family](key: ZKeysetHandle[Family], id: KeyId): RIO[KeysetManager, ZKeysetHandle[Family]] =
+  def enable[Family](key: KeysetHandle[Family], id: KeyId): RIO[KeysetManager, KeysetHandle[Family]] =
     ZIO.accessM(_.get.enable(key, id))
 
-  def disable[Family](key: ZKeysetHandle[Family], id: KeyId): RIO[KeysetManager, ZKeysetHandle[Family]] =
+  def disable[Family](key: KeysetHandle[Family], id: KeyId): RIO[KeysetManager, KeysetHandle[Family]] =
     ZIO.accessM(_.get.disable(key, id))
 
-  def setPrimary[Family](key: ZKeysetHandle[Family], id: KeyId): RIO[KeysetManager, ZKeysetHandle[Family]] =
+  def setPrimary[Family](key: KeysetHandle[Family], id: KeyId): RIO[KeysetManager, KeysetHandle[Family]] =
     ZIO.accessM(_.get.setPrimary(key, id))
 
-  def delete[Family](key: ZKeysetHandle[Family], id: KeyId): RIO[KeysetManager, ZKeysetHandle[Family]] =
+  def delete[Family](key: KeysetHandle[Family], id: KeyId): RIO[KeysetManager, KeysetHandle[Family]] =
     ZIO.accessM(_.get.delete(key, id))
 
-  def destroy[Family](key: ZKeysetHandle[Family], id: KeyId): RIO[KeysetManager, ZKeysetHandle[Family]] =
+  def destroy[Family](key: KeysetHandle[Family], id: KeyId): RIO[KeysetManager, KeysetHandle[Family]] =
     ZIO.accessM(_.get.destroy(key, id))
 
 }
