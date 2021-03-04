@@ -1,6 +1,6 @@
 package zio.crypto.signature
 
-import com.google.crypto.tink.signature.{EcdsaSignKeyManager, SignatureConfig}
+import com.google.crypto.tink.signature.{EcdsaSignKeyManager, Ed25519PrivateKeyManager, SignatureConfig}
 import com.google.crypto.tink.{PublicKeySign, PublicKeyVerify, KeyTemplate => TinkKeyTemplate}
 import zio._
 import zio.crypto.ByteHelpers
@@ -13,7 +13,8 @@ case class SignatureObject[T](value: T) extends AnyVal
 sealed trait SignatureAlgorithm
 
 object SignatureAlgorithm {
-  case object ECDSAP256 extends SignatureAlgorithm
+  case object ECDSA_P256 extends SignatureAlgorithm
+  case object ED25519    extends SignatureAlgorithm
 
   implicit val template: KeyTemplate[SignatureAlgorithm] with AsymmetricKeyset[SignatureAlgorithm] =
     new KeyTemplate[SignatureAlgorithm] with AsymmetricKeyset[SignatureAlgorithm] {
@@ -21,7 +22,8 @@ object SignatureAlgorithm {
 
       override def getTinkKeyTemplate(a: SignatureAlgorithm): TinkKeyTemplate =
         a match {
-          case ECDSAP256 => EcdsaSignKeyManager.ecdsaP256Template()
+          case SignatureAlgorithm.ECDSA_P256 => EcdsaSignKeyManager.ecdsaP256Template()
+          case SignatureAlgorithm.ED25519    => Ed25519PrivateKeyManager.ed25519Template()
         }
     }
 }

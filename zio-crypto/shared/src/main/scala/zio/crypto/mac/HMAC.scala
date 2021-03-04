@@ -26,10 +26,10 @@ object HMACAlgorithm {
 
       override def getTinkKeyTemplate(a: HMACAlgorithm): TinkKeyTemplate =
         a match {
-          case HMACSHA256           => HmacKeyManager.hmacSha256Template()
-          case HMACSHA256HalfDigest => HmacKeyManager.hmacSha256HalfDigestTemplate()
-          case HMACSHA512           => HmacKeyManager.hmacSha512Template()
-          case HMACSHA512HalfDigest => HmacKeyManager.hmacSha512HalfDigestTemplate()
+          case HMACAlgorithm.HMACSHA256           => HmacKeyManager.hmacSha256Template()
+          case HMACAlgorithm.HMACSHA256HalfDigest => HmacKeyManager.hmacSha256HalfDigestTemplate()
+          case HMACAlgorithm.HMACSHA512           => HmacKeyManager.hmacSha512Template()
+          case HMACAlgorithm.HMACSHA512HalfDigest => HmacKeyManager.hmacSha512HalfDigestTemplate()
         }
     }
 }

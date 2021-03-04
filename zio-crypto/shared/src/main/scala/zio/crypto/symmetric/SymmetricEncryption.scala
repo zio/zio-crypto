@@ -21,8 +21,8 @@ object SymmetricEncryptionAlgorithm {
 
       override def getTinkKeyTemplate(a: SymmetricEncryptionAlgorithm): TinkKeyTemplate =
         a match {
-          case AES128GCM => AesGcmKeyManager.aes128GcmTemplate()
-          case AES256GCM => AesGcmKeyManager.aes256GcmTemplate()
+          case SymmetricEncryptionAlgorithm.AES128GCM => AesGcmKeyManager.aes128GcmTemplate()
+          case SymmetricEncryptionAlgorithm.AES256GCM => AesGcmKeyManager.aes256GcmTemplate()
         }
     }
 }

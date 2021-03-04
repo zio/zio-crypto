@@ -31,15 +31,6 @@ object SignatureSpec extends DefaultRunnableSpec {
             } yield assert(verified)(isFalse)
           case _                    => assertCompletesM
         }
-      },
-      testM("sign(m, k) != sign(m, k)") {
-        checkM(Gen.chunkOf(Gen.anyByte)) { m =>
-          for {
-            k          <- KeysetManager.generateNewAsymmetric(alg)
-            signature1 <- Signature.sign(m, k.fullKeyset)
-            signature2 <- Signature.sign(m, k.fullKeyset)
-          } yield assert(signature1)(not(equalTo(signature2)))
-        }
       }
     ),
     suite("string")(
@@ -62,20 +53,12 @@ object SignatureSpec extends DefaultRunnableSpec {
             } yield assert(verified)(isFalse)
           case _                    => assertCompletesM
         }
-      },
-      testM("sign(m, k) != sign(m, k)") {
-        checkM(Gen.anyASCIIString) { m =>
-          for {
-            k          <- KeysetManager.generateNewAsymmetric(alg)
-            signature1 <- Signature.sign(m, k.fullKeyset, US_ASCII)
-            signature2 <- Signature.sign(m, k.fullKeyset, US_ASCII)
-          } yield assert(signature1)(not(equalTo(signature2)))
-        }
       }
     )
   )
 
   def spec: Spec[Environment, TestFailure[Throwable], TestSuccess] = suite("SignatureSpec")(
-    testAlgorithm(SignatureAlgorithm.ECDSAP256)
+    testAlgorithm(SignatureAlgorithm.ECDSA_P256),
+    testAlgorithm(SignatureAlgorithm.ED25519)
   ).provideCustomLayer(Signature.live.orDie ++ KeysetManager.live)
 }
