@@ -13,36 +13,6 @@ object HMACSpec extends DefaultRunnableSpec {
   private val genByteChunk: Gen[Random with Sized, Chunk[Byte]] = Gen.chunkOf(Gen.anyByte)
 
   private def testAlgorithm(alg: HMACAlgorithm) = suite(alg.toString)(
-//    suite("keys")(
-//      testM("deserialize(serialize(k)) = k") {
-//        for {
-//          k             <- KeysetManager.generateNew(alg)
-//          serializedK   <- HMAC.serializeKey(k)
-//          deserializedK <- HMAC.deserializeKey(serializedK).map(_.get)
-//        } yield assert(k)(equalTo(deserializedK)) &&
-//          assert(k.underlying.getEncoded)(equalTo(deserializedK.underlying.getEncoded)) &&
-//          assert(k.underlying.getAlgorithm)(equalTo(k.underlying.getAlgorithm))
-//      },
-//      testM("deserialize('garbage') fails") {
-//        for {
-//          k            <- HMAC.genKey(alg)
-//          serializedK  <- HMAC.serializeKey(k)
-//          extraLengthK <- HMAC.deserializeKey(HMACSerializedKey(serializedK.value + "h"))
-//        } yield assert(extraLengthK)(isNone)
-//      },
-//      testM("verify(m, sign(m, deserialize(serialize(k)), k) = true") {
-//        checkM(Gen.anyASCIIString) { m =>
-//          for {
-//            k             <- HMAC.genKey(alg)
-//            serializedK   <- HMAC.serializeKey(k)
-//            deserializedK <- HMAC.deserializeKey(serializedK).map(_.get)
-//
-//            hmac     <- HMAC.sign(m, k, US_ASCII)
-//            verified <- HMAC.verify(m, hmac, deserializedK, US_ASCII)
-//          } yield assert(verified)(isTrue)
-//        }
-//      }
-//    ),
     suite("strings")(
       testM("verify(m, sign(m, k), k) = true") {
         checkM(Gen.anyASCIIString) { m =>

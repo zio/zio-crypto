@@ -7,7 +7,6 @@ import zio.crypto.ByteHelpers
 import zio.crypto.keyset.{KeyTemplate, Keyset, SymmetricKeyset}
 
 import java.nio.charset.Charset
-import javax.crypto.SecretKey
 
 sealed trait SymmetricEncryptionAlgorithm
 
@@ -25,8 +24,7 @@ object SymmetricEncryptionAlgorithm {
     }
 }
 
-case class CipherText[T](value: T)                  extends AnyVal
-case class SymmetricEncryptionKey(value: SecretKey) extends AnyVal
+case class CipherText[T](value: T) extends AnyVal
 
 object SymmetricEncryption {
   type SymmetricEncryption = Has[SymmetricEncryption.Service]
