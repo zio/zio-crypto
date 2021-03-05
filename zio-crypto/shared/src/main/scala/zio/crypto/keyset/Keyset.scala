@@ -2,8 +2,8 @@ package zio.crypto.keyset
 
 import com.google.crypto.tink.proto.KeyStatusType
 import com.google.crypto.tink.{KeysetHandle, KeyTemplate => TinkKeyTemplate}
+import scala.annotation.nowarn
 
-import scala.collection.JavaConverters._
 //import scala.jdk.CollectionConverters.ListHasAsScala
 
 sealed trait KeyStatus
@@ -24,19 +24,23 @@ trait KeyTemplate[Family] {
 class Keyset[Family](
   private[crypto] val handle: KeysetHandle
 )(implicit val template: KeyTemplate[Family]) {
-  lazy val keys: Seq[KeyInfo[Nothing, Nothing]] = handle.getKeysetInfo.getKeyInfoList.asScala.toSeq.map(x =>
-    KeyInfo(
-      id = KeyId(x.getKeyId),
-      status = x.getStatus match {
-        case KeyStatusType.UNKNOWN_STATUS => KeyStatus.UNKNOWN
-        case KeyStatusType.ENABLED        => KeyStatus.ENABLED
-        case KeyStatusType.DISABLED       => KeyStatus.DISABLED
-        case KeyStatusType.DESTROYED      => KeyStatus.DESTROYED
-        case KeyStatusType.UNRECOGNIZED   => KeyStatus.UNRECOGNIZED
-      },
-      url = x.getTypeUrl
+  @nowarn
+  lazy val keys: Seq[KeyInfo[Nothing, Nothing]] = {
+    import scala.collection.JavaConverters._
+    handle.getKeysetInfo.getKeyInfoList.asScala.toSeq.map(x =>
+      KeyInfo(
+        id = KeyId(x.getKeyId),
+        status = x.getStatus match {
+          case KeyStatusType.UNKNOWN_STATUS => KeyStatus.UNKNOWN
+          case KeyStatusType.ENABLED        => KeyStatus.ENABLED
+          case KeyStatusType.DISABLED       => KeyStatus.DISABLED
+          case KeyStatusType.DESTROYED      => KeyStatus.DESTROYED
+          case KeyStatusType.UNRECOGNIZED   => KeyStatus.UNRECOGNIZED
+        },
+        url = x.getTypeUrl
+      )
     )
-  )
+  }
 }
 
 trait AsymmetricKeyset[-Family]
