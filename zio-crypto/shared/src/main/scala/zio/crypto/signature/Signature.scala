@@ -47,10 +47,9 @@ object Signature {
       case SignatureAlgorithm.ECDSASHA256 => "SHA256withECDSA"
       case SignatureAlgorithm.ECDSASHA384 => "SHA384withECDSA"
       case SignatureAlgorithm.ECDSASHA512 => "SHA512withECDSA"
-
-      case SignatureAlgorithm.RSASHA256 => "SHA256withRSA"
-      case SignatureAlgorithm.RSASHA384 => "SHA384withRSA"
-      case SignatureAlgorithm.RSASHA512 => "SHA512withRSA"
+      case SignatureAlgorithm.RSASHA256   => "SHA256withRSA"
+      case SignatureAlgorithm.RSASHA384   => "SHA384withRSA"
+      case SignatureAlgorithm.RSASHA512   => "SHA512withRSA"
     }
 
     def genKey(alg: SignatureAlgorithm): Task[SignatureKeyPair] = Task.effect {
