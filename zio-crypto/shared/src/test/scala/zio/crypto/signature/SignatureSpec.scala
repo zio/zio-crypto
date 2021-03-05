@@ -20,7 +20,7 @@ object SignatureSpec extends DefaultRunnableSpec {
             verified  <- Signature.verify(m, signature, k.publicKey)
           } yield assert(verified)(isTrue)
         }
-      },
+      }/*,
       testM("verify(m1, sign(m0)) = false") {
         checkM(Gen.chunkOf(Gen.anyByte), Gen.chunkOf(Gen.anyByte)) {
           case (m0, m1) if m0 != m1 =>
@@ -71,13 +71,16 @@ object SignatureSpec extends DefaultRunnableSpec {
             signature2 <- Signature.sign(m, k.privateKey, US_ASCII)
           } yield assert(signature1)(not(equalTo(signature2)))
         }
-      }
+      }*/
     )
   )
 
   def spec: Spec[Environment, TestFailure[Throwable], TestSuccess] = suite("SignatureSpec")(
-    testAlgorithm(SignatureAlgorithm.ECDSASHA256),
-    testAlgorithm(SignatureAlgorithm.ECDSASHA384),
-    testAlgorithm(SignatureAlgorithm.ECDSASHA512)
+//    testAlgorithm(SignatureAlgorithm.ECDSASHA256),
+//    testAlgorithm(SignatureAlgorithm.ECDSASHA384),
+//    testAlgorithm(SignatureAlgorithm.ECDSASHA512),
+//    testAlgorithm(SignatureAlgorithm.RSASHA256),
+//    testAlgorithm(SignatureAlgorithm.RSASHA384),
+    testAlgorithm(SignatureAlgorithm.RSASHA512)
   ).provideCustomLayer(Signature.live ++ SecureRandom.live.orDie)
 }
