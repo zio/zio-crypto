@@ -1,9 +1,10 @@
 package zio.crypto.keyset
 
-import scala.jdk.CollectionConverters.ListHasAsScala
-
 import com.google.crypto.tink.proto.KeyStatusType
-import com.google.crypto.tink.{ KeyTemplate => TinkKeyTemplate, KeysetHandle }
+import com.google.crypto.tink.{KeysetHandle, KeyTemplate => TinkKeyTemplate}
+
+import scala.collection.JavaConverters._
+//import scala.jdk.CollectionConverters.ListHasAsScala
 
 sealed trait KeyStatus
 object KeyStatus {
