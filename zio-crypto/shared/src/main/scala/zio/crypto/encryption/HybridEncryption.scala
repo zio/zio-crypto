@@ -1,12 +1,13 @@
 package zio.crypto.encryption
 
-import com.google.crypto.tink.hybrid.{EciesAeadHkdfPrivateKeyManager, HybridConfig}
-import com.google.crypto.tink.{HybridDecrypt, HybridEncrypt, KeyTemplate => TinkKeyTemplate}
+import java.nio.charset.Charset
+
+import com.google.crypto.tink.hybrid.{ EciesAeadHkdfPrivateKeyManager, HybridConfig }
+import com.google.crypto.tink.{ HybridDecrypt, HybridEncrypt, KeyTemplate => TinkKeyTemplate }
+
 import zio._
 import zio.crypto.ByteHelpers
-import zio.crypto.keyset.{AsymmetricKeyset, KeyTemplate, PrivateKeyset, PublicKeyset}
-
-import java.nio.charset.Charset
+import zio.crypto.keyset.{ AsymmetricKeyset, KeyTemplate, PrivateKeyset, PublicKeyset }
 
 sealed trait HybridEncryptionAlgorithm
 
@@ -20,7 +21,7 @@ object HybridEncryptionAlgorithm {
         a match {
           case HybridEncryptionAlgorithm.EciesP256HkdfHmacSha256Aes128CtrHmacSha256 =>
             EciesAeadHkdfPrivateKeyManager.eciesP256HkdfHmacSha256Aes128CtrHmacSha256Template()
-          case HybridEncryptionAlgorithm.EciesP256HkdfHmacSha256Aes128Gcm =>
+          case HybridEncryptionAlgorithm.EciesP256HkdfHmacSha256Aes128Gcm           =>
             EciesAeadHkdfPrivateKeyManager.eciesP256HkdfHmacSha256Aes128GcmTemplate()
         }
     }
@@ -61,7 +62,7 @@ object HybridEncryption {
           case Some(b) =>
             decrypt(CipherText(b), key)
               .map(x => new String(x.toArray, charset))
-          case _ => Task.fail(new IllegalArgumentException("Ciphertext is not a base-64 encoded string"))
+          case _       => Task.fail(new IllegalArgumentException("Ciphertext is not a base-64 encoded string"))
         }
 
     })

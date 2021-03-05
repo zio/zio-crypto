@@ -49,7 +49,7 @@ object MACSpec extends DefaultRunnableSpec {
               mac      <- MAC.sign(m1, k, US_ASCII)
               verified <- MAC.verify(m0, mac, k, US_ASCII)
             } yield assert(verified)(isFalse)
-          case _ => assertCompletesM
+          case _                    => assertCompletesM
         }
       }
     ),
@@ -89,7 +89,7 @@ object MACSpec extends DefaultRunnableSpec {
               mac      <- MAC.sign(m1, k)
               verified <- MAC.verify(m0, mac, k)
             } yield assert(verified)(isFalse)
-          case _ => assertCompletesM
+          case _                    => assertCompletesM
         }
       }
     )

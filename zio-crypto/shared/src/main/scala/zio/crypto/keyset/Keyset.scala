@@ -1,10 +1,10 @@
 package zio.crypto.keyset
 
+import scala.collection.JavaConverters._
+
 import com.github.ghik.silencer.silent
 import com.google.crypto.tink.proto.KeyStatusType
-import com.google.crypto.tink.{KeysetHandle, KeyTemplate => TinkKeyTemplate}
-
-import scala.collection.JavaConverters._
+import com.google.crypto.tink.{ KeyTemplate => TinkKeyTemplate, KeysetHandle }
 
 sealed trait KeyStatus
 object KeyStatus {
@@ -25,7 +25,7 @@ class Keyset[Family](
   private[crypto] val handle: KeysetHandle
 )(implicit val template: KeyTemplate[Family]) {
   @silent("JavaConverters")
-  lazy val keys: Seq[KeyInfo[Nothing, Nothing]] = {
+  lazy val keys: Seq[KeyInfo[Nothing, Nothing]] =
     handle.getKeysetInfo.getKeyInfoList.asScala.toSeq.map(x =>
       KeyInfo(
         id = KeyId(x.getKeyId),
@@ -39,7 +39,6 @@ class Keyset[Family](
         url = x.getTypeUrl
       )
     )
-  }
 }
 
 trait AsymmetricKeyset[-Family]
