@@ -1,22 +1,26 @@
 package zio.crypto.signature
 
-import java.nio.charset.Charset
-
-import scala.util.Try
-
-import com.google.crypto.tink.signature.{ EcdsaSignKeyManager, Ed25519PrivateKeyManager, SignatureConfig }
-import com.google.crypto.tink.{ KeyTemplate => TinkKeyTemplate, PublicKeySign, PublicKeyVerify }
-
+import com.google.crypto.tink.signature.{
+  EcdsaSignKeyManager,
+  Ed25519PrivateKeyManager,
+  RsaSsaPkcs1SignKeyManager,
+  SignatureConfig
+}
+import com.google.crypto.tink.{PublicKeySign, PublicKeyVerify, KeyTemplate => TinkKeyTemplate}
 import zio._
 import zio.crypto.ByteHelpers
-import zio.crypto.keyset.{ AsymmetricKeyset, KeyTemplate, PrivateKeyset, PublicKeyset }
+import zio.crypto.keyset.{AsymmetricKeyset, KeyTemplate, PrivateKeyset, PublicKeyset}
+
+import java.nio.charset.Charset
+import scala.util.Try
 
 case class SignatureObject[T](value: T) extends AnyVal
 sealed trait SignatureAlgorithm
 
 object SignatureAlgorithm {
-  case object ECDSA_P256 extends SignatureAlgorithm
-  case object ED25519    extends SignatureAlgorithm
+  case object ECDSA_P256              extends SignatureAlgorithm
+  case object ED25519                 extends SignatureAlgorithm
+  case object Rsa3072SsaPkcs1Sha256F4 extends SignatureAlgorithm
 
   implicit val template: KeyTemplate[SignatureAlgorithm] with AsymmetricKeyset[SignatureAlgorithm] =
     new KeyTemplate[SignatureAlgorithm] with AsymmetricKeyset[SignatureAlgorithm] {
@@ -24,6 +28,8 @@ object SignatureAlgorithm {
         a match {
           case SignatureAlgorithm.ECDSA_P256 => EcdsaSignKeyManager.ecdsaP256Template()
           case SignatureAlgorithm.ED25519    => Ed25519PrivateKeyManager.ed25519Template()
+          case SignatureAlgorithm.Rsa3072SsaPkcs1Sha256F4 =>
+            RsaSsaPkcs1SignKeyManager.rsa3072SsaPkcs1Sha256F4Template()
         }
     }
 }
@@ -108,7 +114,7 @@ object Signature {
               signature = SignatureObject(signatureBytes),
               publicKey = publicKey
             )
-          case _                    => UIO(false)
+          case _ => UIO(false)
         }
     })
     .toLayer

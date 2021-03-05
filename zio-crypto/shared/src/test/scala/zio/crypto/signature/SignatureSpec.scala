@@ -29,7 +29,7 @@ object SignatureSpec extends DefaultRunnableSpec {
               signature <- Signature.sign(m0, k)
               verified  <- Signature.verify(m1, signature, k.publicKeyset)
             } yield assert(verified)(isFalse)
-          case _                    => assertCompletesM
+          case _ => assertCompletesM
         }
       }
     ),
@@ -51,7 +51,7 @@ object SignatureSpec extends DefaultRunnableSpec {
               signature <- Signature.sign(m0, k, US_ASCII)
               verified  <- Signature.verify(m1, signature, k.publicKeyset, US_ASCII)
             } yield assert(verified)(isFalse)
-          case _                    => assertCompletesM
+          case _ => assertCompletesM
         }
       }
     )
@@ -59,6 +59,7 @@ object SignatureSpec extends DefaultRunnableSpec {
 
   def spec: Spec[Environment, TestFailure[Throwable], TestSuccess] = suite("SignatureSpec")(
     testAlgorithm(SignatureAlgorithm.ECDSA_P256),
-    testAlgorithm(SignatureAlgorithm.ED25519)
+    testAlgorithm(SignatureAlgorithm.ED25519),
+    testAlgorithm(SignatureAlgorithm.Rsa3072SsaPkcs1Sha256F4)
   ).provideCustomLayer(Signature.live.orDie ++ KeysetManager.live)
 }
