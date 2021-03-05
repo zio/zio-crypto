@@ -1,10 +1,10 @@
 package zio.crypto.keyset
 
+import com.github.ghik.silencer.silent
 import com.google.crypto.tink.proto.KeyStatusType
 import com.google.crypto.tink.{KeysetHandle, KeyTemplate => TinkKeyTemplate}
-import scala.annotation.nowarn
 
-//import scala.jdk.CollectionConverters.ListHasAsScala
+import scala.collection.JavaConverters._
 
 sealed trait KeyStatus
 object KeyStatus {
@@ -24,9 +24,8 @@ trait KeyTemplate[Family] {
 class Keyset[Family](
   private[crypto] val handle: KeysetHandle
 )(implicit val template: KeyTemplate[Family]) {
-  @nowarn
+  @silent("JavaConverters")
   lazy val keys: Seq[KeyInfo[Nothing, Nothing]] = {
-    import scala.collection.JavaConverters._
     handle.getKeysetInfo.getKeyInfoList.asScala.toSeq.map(x =>
       KeyInfo(
         id = KeyId(x.getKeyId),
