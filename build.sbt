@@ -31,15 +31,11 @@ val tinkVersion = "1.5.0"
 lazy val root = project
   .in(file("."))
   .settings(
-    skip in publish := true,
-    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
+    skip in publish := true
   )
-  .aggregate(
-    zioCryptoJVM,
-    zioCryptoJS
-  )
+  .aggregate(zioCryptoJVM)
 
-lazy val zioCrypto = crossProject(JSPlatform, JVMPlatform)
+lazy val zioCrypto = crossProject(JVMPlatform)
   .in(file("zio-crypto"))
   .settings(stdSettings("zio-crypto"))
   .settings(crossProjectSettings)
@@ -53,9 +49,6 @@ lazy val zioCrypto = crossProject(JSPlatform, JVMPlatform)
     )
   )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
-
-lazy val zioCryptoJS = zioCrypto.js
-  .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val zioCryptoJVM = zioCrypto.jvm
   .settings(dottySettings)
