@@ -25,41 +25,37 @@ addCommandAlias("fix", "scalafixAll")
 addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheckAll")
 addCommandAlias("fixCheck", "scalafixAll --check")
 
-val zioVersion = "1.0.4-2"
+val zioVersion  = "1.0.4-2"
+val tinkVersion = "1.5.0"
 
 lazy val root = project
   .in(file("."))
   .settings(
-    skip in publish := true,
-    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
+    skip in publish := true
   )
-  .aggregate(
-    zioCryptoJVM,
-    zioCryptoJS
-  )
+  .aggregate(zioCryptoJVM)
 
-lazy val zioCrypto = crossProject(JSPlatform, JVMPlatform)
+lazy val zioCrypto = crossProject(JVMPlatform)
   .in(file("zio-crypto"))
   .settings(stdSettings("zio-crypto"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.crypto"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"          % zioVersion,
-      "dev.zio" %% "zio-test"     % zioVersion % "test",
-      "dev.zio" %% "zio-test-sbt" % zioVersion % "test"
+      "dev.zio"               %% "zio"          % zioVersion,
+      "dev.zio"               %% "zio-test"     % zioVersion % "test",
+      "dev.zio"               %% "zio-test-sbt" % zioVersion % "test",
+      "com.google.crypto.tink" % "tink"         % tinkVersion
     )
   )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
-
-lazy val zioCryptoJS = zioCrypto.js
-  .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val zioCryptoJVM = zioCrypto.jvm
   .settings(dottySettings)
 
 lazy val docs = project
   .in(file("zio-crypto-docs"))
+  .dependsOn(zioCrypto.jvm)
   .settings(
     skip.in(publish) := true,
     moduleName := "zio-crypto-docs",
