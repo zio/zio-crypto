@@ -15,6 +15,10 @@ object SignatureAlgorithm {
   case object ECDSASHA256 extends SignatureAlgorithm
   case object ECDSASHA384 extends SignatureAlgorithm
   case object ECDSASHA512 extends SignatureAlgorithm
+
+  case object RSASHA256 extends SignatureAlgorithm
+  case object RSASHA384 extends SignatureAlgorithm
+  case object RSASHA512 extends SignatureAlgorithm
 }
 
 case class SignaturePrivateKey(key: PrivateKey, algorithm: SignatureAlgorithm)
@@ -43,11 +47,24 @@ object Signature {
       case SignatureAlgorithm.ECDSASHA256 => "SHA256withECDSA"
       case SignatureAlgorithm.ECDSASHA384 => "SHA384withECDSA"
       case SignatureAlgorithm.ECDSASHA512 => "SHA512withECDSA"
+      case SignatureAlgorithm.RSASHA256   => "SHA256withRSA"
+      case SignatureAlgorithm.RSASHA384   => "SHA384withRSA"
+      case SignatureAlgorithm.RSASHA512   => "SHA512withRSA"
     }
 
     def genKey(alg: SignatureAlgorithm): Task[SignatureKeyPair] = Task.effect {
-      val keyPairGenerator = KeyPairGenerator.getInstance("EC")
+      val keyPairAlgorithm = alg match {
+        case SignatureAlgorithm.ECDSASHA256 => "EC"
+        case SignatureAlgorithm.ECDSASHA384 => "EC"
+        case SignatureAlgorithm.ECDSASHA512 => "EC"
+        case SignatureAlgorithm.RSASHA256   => "RSA"
+        case SignatureAlgorithm.RSASHA384   => "RSA"
+        case SignatureAlgorithm.RSASHA512   => "RSA"
+      }
+
+      val keyPairGenerator = KeyPairGenerator.getInstance(keyPairAlgorithm)
       val keypair          = keyPairGenerator.generateKeyPair
+
       SignatureKeyPair(
         publicKey = SignaturePublicKey(keypair.getPublic, alg),
         privateKey = SignaturePrivateKey(keypair.getPrivate, alg)

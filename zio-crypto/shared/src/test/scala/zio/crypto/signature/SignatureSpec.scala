@@ -78,6 +78,9 @@ object SignatureSpec extends DefaultRunnableSpec {
   def spec: Spec[Environment, TestFailure[Throwable], TestSuccess] = suite("SignatureSpec")(
     testAlgorithm(SignatureAlgorithm.ECDSASHA256),
     testAlgorithm(SignatureAlgorithm.ECDSASHA384),
-    testAlgorithm(SignatureAlgorithm.ECDSASHA512)
+    testAlgorithm(SignatureAlgorithm.ECDSASHA512),
+    testAlgorithm(SignatureAlgorithm.RSASHA256),
+    testAlgorithm(SignatureAlgorithm.RSASHA384),
+    testAlgorithm(SignatureAlgorithm.RSASHA512)
   ).provideCustomLayer(Signature.live ++ SecureRandom.live.orDie)
 }
