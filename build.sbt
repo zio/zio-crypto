@@ -25,8 +25,8 @@ addCommandAlias("fix", "scalafixAll")
 addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheckAll")
 addCommandAlias("fixCheck", "scalafixAll --check")
 
-val zioVersion  = "1.0.4-2"
-val tinkVersion = "1.5.0"
+val zioVersion  = "1.0.11"
+val tinkVersion = "1.6.1"
 
 lazy val root = project
   .in(file("."))
