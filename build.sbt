@@ -12,63 +12,62 @@ inThisBuild(
         "john@degoes.net",
         url("http://degoes.net")
       )
-    ),
-    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing := file("/tmp/public.asc"),
-    pgpSecretRing := file("/tmp/secret.asc")
+    )
   )
 )
 
-addCommandAlias("prepare", "fix; fmt")
-addCommandAlias("fmt", "all scalafmtSbt scalafmtAll")
-addCommandAlias("fix", "scalafixAll")
-addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheckAll")
-addCommandAlias("fixCheck", "scalafixAll --check")
+addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
+addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check")
+
+addCommandAlias(
+  "testJVM",
+  ";coreJVM/test"
+)
 
 val zioVersion  = "1.0.11"
 val tinkVersion = "1.6.1"
 
 lazy val root = project
   .in(file("."))
-  .settings(
-    skip in publish := true
+  .settings(publish / skip := true)
+  .aggregate(
+    coreJVM,
+    docs
   )
-  .aggregate(zioCryptoJVM)
 
-lazy val zioCrypto = crossProject(JVMPlatform)
-  .in(file("zio-crypto"))
+lazy val core = crossProject(JVMPlatform)
+  .in(file("core"))
   .settings(stdSettings("zio-crypto"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.crypto"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"               %% "zio"          % zioVersion,
-      "dev.zio"               %% "zio-test"     % zioVersion % "test",
-      "dev.zio"               %% "zio-test-sbt" % zioVersion % "test",
-      "com.google.crypto.tink" % "tink"         % tinkVersion
+      "dev.zio"              %%% "zio"      % zioVersion,
+      "dev.zio"              %%% "zio-test" % zioVersion % "test",
+      "com.google.crypto.tink" % "tink"     % tinkVersion
     )
   )
-  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
+  .enablePlugins(BuildInfoPlugin)
 
-lazy val zioCryptoJVM = zioCrypto.jvm
+lazy val coreJVM = core.jvm
   .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+  .settings(scalaReflectTestSettings)
 
 lazy val docs = project
   .in(file("zio-crypto-docs"))
-  .dependsOn(zioCrypto.jvm)
   .settings(
-    skip.in(publish) := true,
+    publish / skip := true,
     moduleName := "zio-crypto-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % zioVersion
-    ),
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(root),
-    target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
-    cleanFiles += (target in (ScalaUnidoc, unidoc)).value,
-    docusaurusCreateSite := docusaurusCreateSite.dependsOn(unidoc in Compile).value,
-    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(unidoc in Compile).value
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM),
+    ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
+    cleanFiles += (ScalaUnidoc / unidoc / target).value,
+    docusaurusCreateSite := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
+    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
   )
-  .dependsOn(zioCryptoJVM)
+  .dependsOn(coreJVM)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)

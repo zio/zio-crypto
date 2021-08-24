@@ -1,9 +1,13 @@
 name: CI
 
+env:
+  JDK_JAVA_OPTIONS: -XX:+PrintCommandLineFlags -Xmx3G # JDK_JAVA_OPTIONS is _the_ env. variable to use for modern Java
+  JVM_OPTS: -XX:+PrintCommandLineFlags -Xmx3G # for Java 8 only (sadly, it is not modern enough for JDK_JAVA_OPTIONS)
+
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: ['main']
   release:
     types:
       - published
@@ -18,12 +22,25 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup Scala and Java
-        uses: olafurpg/setup-scala@v10
+        uses: olafurpg/setup-scala@v13
       - name: Cache scala dependencies
-        uses: coursier/cache-action@v5
+        uses: coursier/cache-action@v6
       - name: Lint code
-        run: sbt fmtCheck fixCheck
-  
+        run: sbt check
+
+  doc:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v2.3.4
+      - name: Setup Scala and Java
+        uses: olafurpg/setup-scala@v13
+      - name: Cache scala dependencies
+        uses: coursier/cache-action@v6
+      - name: Check Document Generation
+        run: sbt +coreJVM/doc +experimentalJVM/doc +scalaParallelCollections/doc docs/docusaurusCreateSite
+
   test:
     runs-on: ubuntu-20.04
     timeout-minutes: 30
@@ -31,31 +48,49 @@ jobs:
       fail-fast: false
       matrix:
         java: ['adopt@1.8', 'adopt@1.11']
-        scala: ['2.11.12', '2.12.13', '2.13.4', '3.0.0-M3']
+        scala: ['2.11.12', '2.12.14', '2.13.6', '3.0.1']
+        platform: ['JVM']
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v2.3.4
         with:
           fetch-depth: 0
       - name: Setup Scala and Java
-        uses: olafurpg/setup-scala@v10
+        uses: olafurpg/setup-scala@v13
         with:
           java-version: ${{ matrix.java }}
       - name: Cache scala dependencies
-        uses: coursier/cache-action@v5
+        uses: coursier/cache-action@v6
       - name: Run tests
-        run: sbt ++${{ matrix.scala }}! test
+        if: ${{ !startsWith(matrix.scala, '3.0.') }}
+        run: sbt ++${{ matrix.scala }}! test${{ matrix.platform }}
+      - name: Run dotty tests
+        if: ${{ startsWith(matrix.scala, '3.0.') && matrix.platform == 'JVM' }}
+        run: sbt ++${{ matrix.scala }}! testJVM
+
+  ci:
+    runs-on: ubuntu-20.04
+    needs: [lint, doc, test]
+    steps:
+      - name: Aggregate of lint, and all tests
+        run: echo "ci passed"
 
   publish:
     runs-on: ubuntu-20.04
-    needs: [lint, test]
+    timeout-minutes: 30
+    needs: [ci]
     if: github.event_name != 'pull_request'
     steps:
-      - uses: actions/checkout@v2.3.4
+      - name: Checkout current branch
+        uses: actions/checkout@v2.3.4
         with:
           fetch-depth: 0
-      - uses: olafurpg/setup-scala@v10
-      - run: sbt ci-release
+      - name: Setup Scala and Java
+        uses: olafurpg/setup-scala@v13
+      - name: Cache scala dependencies
+        uses: coursier/cache-action@v6
+      - name: Release artifacts
+        run: sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
