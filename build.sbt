@@ -36,7 +36,7 @@ lazy val root = project
   )
 
 lazy val core = crossProject(JVMPlatform)
-  .in(file("core"))
+  .in(file("zio-crypto"))
   .settings(stdSettings("zio-crypto"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.crypto"))
