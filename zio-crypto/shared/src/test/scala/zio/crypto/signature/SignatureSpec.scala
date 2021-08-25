@@ -2,14 +2,11 @@ package zio.crypto.signature
 
 import java.nio.charset.StandardCharsets.US_ASCII
 
-import zio._
 import zio.crypto.keyset.KeysetManager
 import zio.test.Assertion._
 import zio.test._
 
 object SignatureSpec extends DefaultRunnableSpec {
-  private val assertCompletesM = assertM(UIO(true))(isTrue)
-
   private def testAlgorithm(alg: SignatureAlgorithm) = suite(alg.toString)(
     suite("bytes")(
       testM("verify(m, sign(m)) = true") {
