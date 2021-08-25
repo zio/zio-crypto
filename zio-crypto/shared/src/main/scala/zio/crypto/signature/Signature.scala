@@ -34,89 +34,90 @@ object SignatureAlgorithm {
     }
 }
 
-object Signature {
-  type Signature = Has[Signature.Service]
+trait Signature {
+  def sign(
+    m: Chunk[Byte],
+    privateKey: PrivateKeyset[SignatureAlgorithm]
+  ): Task[SignatureObject[Chunk[Byte]]]
+  def sign(
+    m: String,
+    privateKey: PrivateKeyset[SignatureAlgorithm],
+    charset: Charset
+  ): Task[SignatureObject[String]]
+  def verify(
+    m: Chunk[Byte],
+    signature: SignatureObject[Chunk[Byte]],
+    publicKey: PublicKeyset[SignatureAlgorithm]
+  ): Task[Boolean]
+  def verify(
+    m: String,
+    signature: SignatureObject[String],
+    publicKey: PublicKeyset[SignatureAlgorithm],
+    charset: Charset
+  ): Task[Boolean]
+}
 
-  trait Service {
-    def sign(
-      m: Chunk[Byte],
-      privateKey: PrivateKeyset[SignatureAlgorithm]
-    ): Task[SignatureObject[Chunk[Byte]]]
-    def sign(
-      m: String,
-      privateKey: PrivateKeyset[SignatureAlgorithm],
-      charset: Charset
-    ): Task[SignatureObject[String]]
-    def verify(
-      m: Chunk[Byte],
-      signature: SignatureObject[Chunk[Byte]],
-      publicKey: PublicKeyset[SignatureAlgorithm]
-    ): Task[Boolean]
-    def verify(
-      m: String,
-      signature: SignatureObject[String],
-      publicKey: PublicKeyset[SignatureAlgorithm],
-      charset: Charset
-    ): Task[Boolean]
-  }
-
-  val live: TaskLayer[Signature] = Task
-    .effect(SignatureConfig.register())
-    .as(new Service {
-      def sign(
-        m: Chunk[Byte],
-        privateKey: PrivateKeyset[SignatureAlgorithm]
-      ): Task[SignatureObject[Chunk[Byte]]] =
-        Task.effect(
-          SignatureObject(
-            Chunk.fromArray(
-              privateKey.handle
-                .getPrimitive(classOf[PublicKeySign])
-                .sign(m.toArray)
-            )
-          )
+private object SignatureLive extends Signature {
+  def sign(
+    m: Chunk[Byte],
+    privateKey: PrivateKeyset[SignatureAlgorithm]
+  ): Task[SignatureObject[Chunk[Byte]]] =
+    Task.effect(
+      SignatureObject(
+        Chunk.fromArray(
+          privateKey.handle
+            .getPrimitive(classOf[PublicKeySign])
+            .sign(m.toArray)
         )
+      )
+    )
 
-      def verify(
-        m: Chunk[Byte],
-        signature: SignatureObject[Chunk[Byte]],
-        publicKey: PublicKeyset[SignatureAlgorithm]
-      ): Task[Boolean] =
-        Task.effect {
-          Try(
-            publicKey.handle
-              .getPrimitive(classOf[PublicKeyVerify])
-              .verify(
-                signature.value.toArray,
-                m.toArray
-              )
-          ).toOption.isDefined
-        }
+  def verify(
+    m: Chunk[Byte],
+    signature: SignatureObject[Chunk[Byte]],
+    publicKey: PublicKeyset[SignatureAlgorithm]
+  ): Task[Boolean] =
+    Task.effect {
+      Try(
+        publicKey.handle
+          .getPrimitive(classOf[PublicKeyVerify])
+          .verify(
+            signature.value.toArray,
+            m.toArray
+          )
+      ).toOption.isDefined
+    }
 
-      override def sign(
-        m: String,
-        privateKey: PrivateKeyset[SignatureAlgorithm],
-        charset: Charset
-      ): Task[SignatureObject[String]] =
-        sign(Chunk.fromArray(m.getBytes(charset)), privateKey)
-          .map(x => SignatureObject(ByteHelpers.toB64String(x.value)))
+  override def sign(
+    m: String,
+    privateKey: PrivateKeyset[SignatureAlgorithm],
+    charset: Charset
+  ): Task[SignatureObject[String]] =
+    sign(Chunk.fromArray(m.getBytes(charset)), privateKey)
+      .map(x => SignatureObject(ByteHelpers.toB64String(x.value)))
 
-      override def verify(
-        m: String,
-        signature: SignatureObject[String],
-        publicKey: PublicKeyset[SignatureAlgorithm],
-        charset: Charset
-      ): Task[Boolean] =
-        ByteHelpers.fromB64String(signature.value) match {
-          case Some(signatureBytes) =>
-            verify(
-              m = Chunk.fromArray(m.getBytes(charset)),
-              signature = SignatureObject(signatureBytes),
-              publicKey = publicKey
-            )
-          case _                    => UIO(false)
-        }
-    })
+  override def verify(
+    m: String,
+    signature: SignatureObject[String],
+    publicKey: PublicKeyset[SignatureAlgorithm],
+    charset: Charset
+  ): Task[Boolean] =
+    ByteHelpers.fromB64String(signature.value) match {
+      case Some(signatureBytes) =>
+        verify(
+          m = Chunk.fromArray(m.getBytes(charset)),
+          signature = SignatureObject(signatureBytes),
+          publicKey = publicKey
+        )
+      case _                    => UIO(false)
+    }
+}
+
+object Signature {
+
+  val live: TaskLayer[Has[Signature]] = Task
+    .effect(SignatureConfig.register())
+    .as(SignatureLive)
     .toLayer
 
   /**
@@ -129,7 +130,7 @@ object Signature {
   def sign(
     m: Chunk[Byte],
     privateKey: PrivateKeyset[SignatureAlgorithm]
-  ): RIO[Signature, SignatureObject[Chunk[Byte]]] =
+  ): RIO[Has[Signature], SignatureObject[Chunk[Byte]]] =
     ZIO.accessM(_.get.sign(m, privateKey))
 
   /**
@@ -144,7 +145,7 @@ object Signature {
     m: String,
     privateKey: PrivateKeyset[SignatureAlgorithm],
     charset: Charset
-  ): RIO[Signature, SignatureObject[String]] =
+  ): RIO[Has[Signature], SignatureObject[String]] =
     ZIO.accessM(_.get.sign(m, privateKey, charset))
 
   /**
@@ -159,7 +160,7 @@ object Signature {
     m: Chunk[Byte],
     signature: SignatureObject[Chunk[Byte]],
     publicKey: PublicKeyset[SignatureAlgorithm]
-  ): RIO[Signature, Boolean] =
+  ): RIO[Has[Signature], Boolean] =
     ZIO.accessM(_.get.verify(m, signature, publicKey))
 
   /**
@@ -176,7 +177,7 @@ object Signature {
     signature: SignatureObject[String],
     publicKey: PublicKeyset[SignatureAlgorithm],
     charset: Charset
-  ): RIO[Signature, Boolean] =
+  ): RIO[Has[Signature], Boolean] =
     ZIO.accessM(_.get.verify(m, signature, publicKey, charset))
 
 }

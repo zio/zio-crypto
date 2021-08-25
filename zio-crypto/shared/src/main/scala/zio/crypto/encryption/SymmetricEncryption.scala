@@ -27,44 +27,46 @@ object SymmetricEncryptionAlgorithm {
     }
 }
 
+trait SymmetricEncryption {
+  type KEY = Keyset[SymmetricEncryptionAlgorithm]
+
+  def encrypt(plainText: Chunk[Byte], key: KEY): Task[CipherText[Chunk[Byte]]]
+  def decrypt(ciphertext: CipherText[Chunk[Byte]], key: KEY): Task[Chunk[Byte]]
+  def encrypt(plainText: String, key: KEY, charset: Charset): Task[CipherText[String]]
+  def decrypt(ciphertext: CipherText[String], key: KEY, charset: Charset): Task[String]
+}
+
+private object SymmetricEncryptionLive extends SymmetricEncryption {
+  override def encrypt(plainText: Chunk[Byte], key: KEY): Task[CipherText[Chunk[Byte]]] =
+    Task.effect(
+      CipherText(Chunk.fromArray(key.handle.getPrimitive(classOf[Aead]).encrypt(plainText.toArray, null)))
+    )
+
+  override def decrypt(ciphertext: CipherText[Chunk[Byte]], key: KEY): Task[Chunk[Byte]] =
+    Task.effect(
+      Chunk.fromArray(key.handle.getPrimitive(classOf[Aead]).decrypt(ciphertext.value.toArray, null))
+    )
+
+  override def encrypt(plainText: String, key: KEY, charset: Charset): Task[CipherText[String]] =
+    encrypt(Chunk.fromArray(plainText.getBytes(charset)), key)
+      .map(x => CipherText(ByteHelpers.toB64String(x.value)))
+
+  override def decrypt(ciphertext: CipherText[String], key: KEY, charset: Charset): Task[String] =
+    ByteHelpers
+      .fromB64String(ciphertext.value) match {
+      case Some(b) =>
+        decrypt(CipherText(b), key)
+          .map(x => new String(x.toArray, charset))
+      case _       => Task.fail(new IllegalArgumentException("Ciphertext is not a base-64 encoded string"))
+    }
+}
+
 object SymmetricEncryption {
-  type SymmetricEncryption = Has[SymmetricEncryption.Service]
-  type KEY                 = Keyset[SymmetricEncryptionAlgorithm]
+  type KEY = Keyset[SymmetricEncryptionAlgorithm]
 
-  trait Service {
-    def encrypt(plainText: Chunk[Byte], key: KEY): Task[CipherText[Chunk[Byte]]]
-    def decrypt(ciphertext: CipherText[Chunk[Byte]], key: KEY): Task[Chunk[Byte]]
-    def encrypt(plainText: String, key: KEY, charset: Charset): Task[CipherText[String]]
-    def decrypt(ciphertext: CipherText[String], key: KEY, charset: Charset): Task[String]
-  }
-
-  val live: TaskLayer[SymmetricEncryption] = Task
+  val live: TaskLayer[Has[SymmetricEncryption]] = Task
     .effect(AeadConfig.register())
-    .as(new Service {
-      override def encrypt(plainText: Chunk[Byte], key: KEY): Task[CipherText[Chunk[Byte]]] =
-        Task.effect(
-          CipherText(Chunk.fromArray(key.handle.getPrimitive(classOf[Aead]).encrypt(plainText.toArray, null)))
-        )
-
-      override def decrypt(ciphertext: CipherText[Chunk[Byte]], key: KEY): Task[Chunk[Byte]] =
-        Task.effect(
-          Chunk.fromArray(key.handle.getPrimitive(classOf[Aead]).decrypt(ciphertext.value.toArray, null))
-        )
-
-      override def encrypt(plainText: String, key: KEY, charset: Charset): Task[CipherText[String]] =
-        encrypt(Chunk.fromArray(plainText.getBytes(charset)), key)
-          .map(x => CipherText(ByteHelpers.toB64String(x.value)))
-
-      override def decrypt(ciphertext: CipherText[String], key: KEY, charset: Charset): Task[String] =
-        ByteHelpers
-          .fromB64String(ciphertext.value) match {
-          case Some(b) =>
-            decrypt(CipherText(b), key)
-              .map(x => new String(x.toArray, charset))
-          case _       => Task.fail(new IllegalArgumentException("Ciphertext is not a base-64 encoded string"))
-        }
-
-    })
+    .as(SymmetricEncryptionLive)
     .toLayer
 
   /**
@@ -74,7 +76,7 @@ object SymmetricEncryption {
    * @param key: The key to use to encrypt the message.
    * @return the ciphertext generated from encrypting `plainText` with `key`.
    */
-  def encrypt(plainText: Chunk[Byte], key: KEY): RIO[SymmetricEncryption, CipherText[Chunk[Byte]]] =
+  def encrypt(plainText: Chunk[Byte], key: KEY): RIO[Has[SymmetricEncryption], CipherText[Chunk[Byte]]] =
     ZIO.accessM(_.get.encrypt(plainText, key))
 
   /**
@@ -85,7 +87,7 @@ object SymmetricEncryption {
    * @param charset: The charset of `plainText`.
    * @return the ciphertext generated from encrypting `plainText` with `key`.
    */
-  def encrypt(plainText: String, key: KEY, charset: Charset): RIO[SymmetricEncryption, CipherText[String]] =
+  def encrypt(plainText: String, key: KEY, charset: Charset): RIO[Has[SymmetricEncryption], CipherText[String]] =
     ZIO.accessM(_.get.encrypt(plainText, key, charset))
 
   /**
@@ -95,7 +97,7 @@ object SymmetricEncryption {
    * @param key: The key to use to decrypt the ciphertext
    * @return the plaintext decrypted from the `CipherText` `ciphertext` under the `SymmetricEncryptionKey` `key`.
    */
-  def decrypt(ciphertext: CipherText[Chunk[Byte]], key: KEY): RIO[SymmetricEncryption, Chunk[Byte]] =
+  def decrypt(ciphertext: CipherText[Chunk[Byte]], key: KEY): RIO[Has[SymmetricEncryption], Chunk[Byte]] =
     ZIO.accessM(_.get.decrypt(ciphertext, key))
 
   /**
@@ -106,7 +108,7 @@ object SymmetricEncryption {
    * @param charset: The charset of the original plaintext.
    * @return the plaintext decrypted from the `CipherText` `ciphertext` under the `SymmetricEncryptionKey` `key`.
    */
-  def decrypt(ciphertext: CipherText[String], key: KEY, charset: Charset): RIO[SymmetricEncryption, String] =
+  def decrypt(ciphertext: CipherText[String], key: KEY, charset: Charset): RIO[Has[SymmetricEncryption], String] =
     ZIO.accessM(_.get.decrypt(ciphertext, key, charset))
 
 }
