@@ -24,15 +24,17 @@ addCommandAlias(
   ";coreJVM/test"
 )
 
-val zioVersion  = "1.0.11"
-val tinkVersion = "1.6.1"
+val googleCloudKMSVersion = "2.0.2"
+val tinkVersion           = "1.6.1"
+val zioVersion            = "1.0.11"
 
 lazy val root = project
   .in(file("."))
   .settings(publish / skip := true)
   .aggregate(
     coreJVM,
-    docs
+    docs,
+    gcpKMSJVM
   )
 
 lazy val core = crossProject(JVMPlatform)
@@ -56,6 +58,26 @@ lazy val coreJVM = core.jvm
   .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
   .settings(scalaReflectTestSettings)
 
+lazy val gcpKMSJVM = project
+  .in(file("zio-crypto-gcpkms"))
+  .settings(stdSettings("zio-crypto-gcpkms"))
+  .settings(buildInfoSettings("zio.crypto.gcpkms"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio"              %%% "zio"              % zioVersion,
+      "dev.zio"              %%% "zio-test"         % zioVersion % "test",
+      "com.google.crypto.tink" % "tink-gcpkms"      % tinkVersion,
+      "com.google.cloud"       % "google-cloud-kms" % googleCloudKMSVersion
+    )
+  )
+  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
+  .dependsOn(coreJVM)
+  .enablePlugins(BuildInfoPlugin)
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+  .settings(scalaReflectTestSettings)
+
 lazy val docs = project
   .in(file("zio-crypto-docs"))
   .settings(
@@ -63,11 +85,11 @@ lazy val docs = project
     moduleName := "zio-crypto-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, gcpKMSJVM),
     ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
     cleanFiles += (ScalaUnidoc / unidoc / target).value,
     docusaurusCreateSite := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
     docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
   )
-  .dependsOn(coreJVM)
+  .dependsOn(coreJVM, gcpKMSJVM)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
