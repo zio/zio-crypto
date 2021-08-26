@@ -9,7 +9,6 @@ import zio.test.Assertion._
 import zio.test._
 
 object MACSpec extends DefaultRunnableSpec {
-  private val assertCompletesM                                  = assertM(UIO.succeed(true))(isTrue)
   private val genByteChunk: Gen[Random with Sized, Chunk[Byte]] = Gen.chunkOf(Gen.anyByte)
 
   private def testAlgorithm(alg: MACAlgorithm) = suite(alg.toString)(

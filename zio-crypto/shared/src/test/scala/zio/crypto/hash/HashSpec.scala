@@ -10,8 +10,6 @@ import zio.test._
 
 object HashSpec extends DefaultRunnableSpec {
 
-  private val assertCompletesM = assertM(UIO(true))(isTrue)
-
   private val genByteChunk: Gen[Random with Sized, Chunk[Byte]] = Gen.chunkOf(Gen.anyByte)
 
   private def testAlgorithm[Alg <: HashAlgorithm](implicit alg: Alg, secure: Secure[Alg]) = suite(alg.toString)(
