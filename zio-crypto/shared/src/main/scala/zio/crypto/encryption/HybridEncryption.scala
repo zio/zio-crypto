@@ -27,45 +27,48 @@ object HybridEncryptionAlgorithm {
     }
 }
 
+trait HybridEncryption {
+  type PrivateKey = PrivateKeyset[HybridEncryptionAlgorithm]
+  type PublicKey  = PublicKeyset[HybridEncryptionAlgorithm]
+
+  def encrypt(plainText: Chunk[Byte], key: PublicKey): Task[CipherText[Chunk[Byte]]]
+  def decrypt(ciphertext: CipherText[Chunk[Byte]], key: PrivateKey): Task[Chunk[Byte]]
+  def encrypt(plainText: String, key: PublicKey, charset: Charset): Task[CipherText[String]]
+  def decrypt(ciphertext: CipherText[String], key: PrivateKey, charset: Charset): Task[String]
+}
+
+private object HybridEncryptionLive extends HybridEncryption {
+  override def encrypt(plainText: Chunk[Byte], key: PublicKey): Task[CipherText[Chunk[Byte]]] =
+    Task.effect(
+      CipherText(Chunk.fromArray(key.handle.getPrimitive(classOf[HybridEncrypt]).encrypt(plainText.toArray, null)))
+    )
+
+  override def decrypt(ciphertext: CipherText[Chunk[Byte]], key: PrivateKey): Task[Chunk[Byte]] =
+    Task.effect(
+      Chunk.fromArray(key.handle.getPrimitive(classOf[HybridDecrypt]).decrypt(ciphertext.value.toArray, null))
+    )
+
+  override def encrypt(plainText: String, key: PublicKey, charset: Charset): Task[CipherText[String]] =
+    encrypt(Chunk.fromArray(plainText.getBytes(charset)), key)
+      .map(x => CipherText(ByteHelpers.toB64String(x.value)))
+
+  override def decrypt(ciphertext: CipherText[String], key: PrivateKey, charset: Charset): Task[String] =
+    ByteHelpers
+      .fromB64String(ciphertext.value) match {
+      case Some(b) =>
+        decrypt(CipherText(b), key)
+          .map(x => new String(x.toArray, charset))
+      case _       => Task.fail(new IllegalArgumentException("Ciphertext is not a base-64 encoded string"))
+    }
+}
+
 object HybridEncryption {
-  type HybridEncryption = Has[HybridEncryption.Service]
-  type PrivateKey       = PrivateKeyset[HybridEncryptionAlgorithm]
-  type PublicKey        = PublicKeyset[HybridEncryptionAlgorithm]
+  type PrivateKey = PrivateKeyset[HybridEncryptionAlgorithm]
+  type PublicKey  = PublicKeyset[HybridEncryptionAlgorithm]
 
-  trait Service {
-    def encrypt(plainText: Chunk[Byte], key: PublicKey): Task[CipherText[Chunk[Byte]]]
-    def decrypt(ciphertext: CipherText[Chunk[Byte]], key: PrivateKey): Task[Chunk[Byte]]
-    def encrypt(plainText: String, key: PublicKey, charset: Charset): Task[CipherText[String]]
-    def decrypt(ciphertext: CipherText[String], key: PrivateKey, charset: Charset): Task[String]
-  }
-
-  val live: TaskLayer[HybridEncryption] = Task
+  val live: TaskLayer[Has[HybridEncryption]] = Task
     .effect(HybridConfig.register())
-    .as(new Service {
-      override def encrypt(plainText: Chunk[Byte], key: PublicKey): Task[CipherText[Chunk[Byte]]] =
-        Task.effect(
-          CipherText(Chunk.fromArray(key.handle.getPrimitive(classOf[HybridEncrypt]).encrypt(plainText.toArray, null)))
-        )
-
-      override def decrypt(ciphertext: CipherText[Chunk[Byte]], key: PrivateKey): Task[Chunk[Byte]] =
-        Task.effect(
-          Chunk.fromArray(key.handle.getPrimitive(classOf[HybridDecrypt]).decrypt(ciphertext.value.toArray, null))
-        )
-
-      override def encrypt(plainText: String, key: PublicKey, charset: Charset): Task[CipherText[String]] =
-        encrypt(Chunk.fromArray(plainText.getBytes(charset)), key)
-          .map(x => CipherText(ByteHelpers.toB64String(x.value)))
-
-      override def decrypt(ciphertext: CipherText[String], key: PrivateKey, charset: Charset): Task[String] =
-        ByteHelpers
-          .fromB64String(ciphertext.value) match {
-          case Some(b) =>
-            decrypt(CipherText(b), key)
-              .map(x => new String(x.toArray, charset))
-          case _       => Task.fail(new IllegalArgumentException("Ciphertext is not a base-64 encoded string"))
-        }
-
-    })
+    .as(HybridEncryptionLive)
     .toLayer
 
   /**
@@ -75,7 +78,7 @@ object HybridEncryption {
    * @param key: The public key to use to encrypt the message.
    * @return the `CipherText` generated from encrypting `plainText` with `key`.
    */
-  def encrypt(plainText: Chunk[Byte], key: PublicKey): RIO[HybridEncryption, CipherText[Chunk[Byte]]] =
+  def encrypt(plainText: Chunk[Byte], key: PublicKey): RIO[Has[HybridEncryption], CipherText[Chunk[Byte]]] =
     ZIO.accessM(_.get.encrypt(plainText, key))
 
   /**
@@ -86,7 +89,7 @@ object HybridEncryption {
    * @param charset: The charset of `plainText`.
    * @return the `CipherText` generated from encrypting `plainText` with `key`.
    */
-  def encrypt(plainText: String, key: PublicKey, charset: Charset): RIO[HybridEncryption, CipherText[String]] =
+  def encrypt(plainText: String, key: PublicKey, charset: Charset): RIO[Has[HybridEncryption], CipherText[String]] =
     ZIO.accessM(_.get.encrypt(plainText, key, charset))
 
   /**
@@ -96,7 +99,7 @@ object HybridEncryption {
    * @param key: The private key to use to decrypt the ciphertext
    * @return the plaintext decrypted from `ciphertext` under the `key`.
    */
-  def decrypt(ciphertext: CipherText[Chunk[Byte]], key: PrivateKey): RIO[HybridEncryption, Chunk[Byte]] =
+  def decrypt(ciphertext: CipherText[Chunk[Byte]], key: PrivateKey): RIO[Has[HybridEncryption], Chunk[Byte]] =
     ZIO.accessM(_.get.decrypt(ciphertext, key))
 
   /**
@@ -107,7 +110,7 @@ object HybridEncryption {
    * @param charset: The charset of the original plaintext.
    * @return the plaintext decrypted from `ciphertext` under the `key`.
    */
-  def decrypt(ciphertext: CipherText[String], key: PrivateKey, charset: Charset): RIO[HybridEncryption, String] =
+  def decrypt(ciphertext: CipherText[String], key: PrivateKey, charset: Charset): RIO[Has[HybridEncryption], String] =
     ZIO.accessM(_.get.decrypt(ciphertext, key, charset))
 
 }

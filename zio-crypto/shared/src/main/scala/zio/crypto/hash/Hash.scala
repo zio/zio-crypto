@@ -38,95 +38,95 @@ object HashAlgorithm {
 
 case class MessageDigest[T](value: T) extends AnyVal
 
-object Hash {
+trait Hash {
 
-  type Hash = Has[Hash.Service]
+  def hash[Alg <: HashAlgorithm](m: Chunk[Byte])(implicit
+    secure: Secure[Alg],
+    alg: Alg
+  ): MessageDigest[Chunk[Byte]]
 
-  trait Service {
+  def verify[Alg <: HashAlgorithm](m: Chunk[Byte], digest: MessageDigest[Chunk[Byte]])(implicit
+    secure: Secure[Alg],
+    alg: Alg
+  ): Boolean
 
-    def hash[Alg <: HashAlgorithm](m: Chunk[Byte])(implicit
-      secure: Secure[Alg],
-      alg: Alg
-    ): MessageDigest[Chunk[Byte]]
+  def hash[Alg <: HashAlgorithm](m: String, charset: Charset)(implicit
+    secure: Secure[Alg],
+    alg: Alg
+  ): MessageDigest[String]
 
-    def verify[Alg <: HashAlgorithm](m: Chunk[Byte], digest: MessageDigest[Chunk[Byte]])(implicit
-      secure: Secure[Alg],
-      alg: Alg
-    ): Boolean
+  def verify[Alg <: HashAlgorithm](m: String, digest: MessageDigest[String], charset: Charset)(implicit
+    secure: Secure[Alg],
+    alg: Alg
+  ): Boolean
+}
 
-    def hash[Alg <: HashAlgorithm](m: String, charset: Charset)(implicit
-      secure: Secure[Alg],
-      alg: Alg
-    ): MessageDigest[String]
+private[crypto] object HashLive extends Hash {
 
-    def verify[Alg <: HashAlgorithm](m: String, digest: MessageDigest[String], charset: Charset)(implicit
-      secure: Secure[Alg],
-      alg: Alg
-    ): Boolean
+  private def getAlgorithmName(alg: HashAlgorithm) = alg match {
+    case HashAlgorithm.MD5    => "MD5"
+    case HashAlgorithm.SHA1   => "SHA-1"
+    case HashAlgorithm.SHA256 => "SHA-256"
+    case HashAlgorithm.SHA512 => "SHA-512"
   }
 
-  val live: ULayer[Hash] = ZLayer.succeed(new Service {
-
-    private def getAlgorithmName(alg: HashAlgorithm) = alg match {
-      case HashAlgorithm.MD5    => "MD5"
-      case HashAlgorithm.SHA1   => "SHA-1"
-      case HashAlgorithm.SHA256 => "SHA-256"
-      case HashAlgorithm.SHA512 => "SHA-512"
-    }
-
-    override def hash[Alg <: HashAlgorithm](m: String, charset: Charset)(implicit
-      secure: Secure[Alg],
-      alg: Alg
-    ): MessageDigest[String] =
-      MessageDigest(
-        ByteHelpers.toB64String(
-          hash(m =
-            Chunk.fromArray(
-              // May throw CharacterCodingException
-              m.getBytes(charset)
-            )
-          ).value
-        )
-      )
-
-    override def verify[Alg <: HashAlgorithm](
-      m: String,
-      digest: MessageDigest[String],
-      charset: Charset
-    )(implicit secure: Secure[Alg], alg: Alg): Boolean =
-      ByteHelpers
-        .fromB64String(digest.value)
-        .map(MessageDigest.apply)
-        .exists(d =>
-          verify(
-            m = Chunk.fromArray(
-              // May throw CharacterCodingException
-              m.getBytes(charset)
-            ),
-            digest = d
+  override def hash[Alg <: HashAlgorithm](m: String, charset: Charset)(implicit
+    secure: Secure[Alg],
+    alg: Alg
+  ): MessageDigest[String] =
+    MessageDigest(
+      ByteHelpers.toB64String(
+        hash(m =
+          Chunk.fromArray(
+            // May throw CharacterCodingException
+            m.getBytes(charset)
           )
-        )
+        ).value
+      )
+    )
 
-    override def hash[Alg <: HashAlgorithm](m: Chunk[Byte])(implicit
-      secure: Secure[Alg],
-      alg: Alg
-    ): MessageDigest[Chunk[Byte]] =
-      MessageDigest(
-        Chunk.fromArray(
-          JMessageDigest
-            // May throw NoSuchAlgorithmException
-            .getInstance(getAlgorithmName(alg))
-            .digest(m.toArray)
+  override def verify[Alg <: HashAlgorithm](
+    m: String,
+    digest: MessageDigest[String],
+    charset: Charset
+  )(implicit secure: Secure[Alg], alg: Alg): Boolean =
+    ByteHelpers
+      .fromB64String(digest.value)
+      .map(MessageDigest.apply)
+      .exists(d =>
+        verify(
+          m = Chunk.fromArray(
+            // May throw CharacterCodingException
+            m.getBytes(charset)
+          ),
+          digest = d
         )
       )
 
-    override def verify[Alg <: HashAlgorithm](m: Chunk[Byte], digest: MessageDigest[Chunk[Byte]])(implicit
-      secure: Secure[Alg],
-      alg: Alg
-    ): Boolean =
-      JMessageDigest.isEqual(hash(m).value.toArray, digest.value.toArray)
+  override def hash[Alg <: HashAlgorithm](m: Chunk[Byte])(implicit
+    secure: Secure[Alg],
+    alg: Alg
+  ): MessageDigest[Chunk[Byte]] =
+    MessageDigest(
+      Chunk.fromArray(
+        JMessageDigest
+          // May throw NoSuchAlgorithmException
+          .getInstance(getAlgorithmName(alg))
+          .digest(m.toArray)
+      )
+    )
 
-  })
+  override def verify[Alg <: HashAlgorithm](m: Chunk[Byte], digest: MessageDigest[Chunk[Byte]])(implicit
+    secure: Secure[Alg],
+    alg: Alg
+  ): Boolean =
+    JMessageDigest.isEqual(hash(m).value.toArray, digest.value.toArray)
+
+}
+
+object Hash {
+
+  val live: ULayer[Has[Hash]] = ZLayer.succeed(HashLive)
 
   /**
    * Hashes the message `m` using the algorithm `alg`.
@@ -139,7 +139,7 @@ object Hash {
         "unsecure(implicit secure => Hash.hash(m))"
     ) secure: Secure[Alg],
     alg: Alg
-  ): RIO[Hash, MessageDigest[Chunk[Byte]]] =
+  ): RIO[Has[Hash], MessageDigest[Chunk[Byte]]] =
     ZIO.access(_.get.hash(m))
 
   /**
@@ -160,7 +160,7 @@ object Hash {
     )
     secure: Secure[Alg],
     alg: Alg
-  ): RIO[Hash, Boolean] =
+  ): RIO[Has[Hash], Boolean] =
     ZIO.access(_.get.verify(m, digest))
 
   /**
@@ -174,7 +174,7 @@ object Hash {
         "unsecure(implicit secure => Hash.hash(m))"
     ) secure: Secure[Alg],
     alg: Alg
-  ): RIO[Hash, MessageDigest[String]] =
+  ): RIO[Has[Hash], MessageDigest[String]] =
     ZIO.access(_.get.hash(m, charset))
 
   /**
@@ -192,7 +192,7 @@ object Hash {
     )
     secure: Secure[Alg],
     alg: Alg
-  ): RIO[Hash, Boolean] =
+  ): RIO[Has[Hash], Boolean] =
     ZIO.access(_.get.verify(m, digest, charset))
 
 }

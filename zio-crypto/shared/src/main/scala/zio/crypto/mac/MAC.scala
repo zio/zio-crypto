@@ -40,68 +40,66 @@ object MACAlgorithm {
 
 final case class MACObject[Kind](value: Kind) extends AnyVal
 
+trait MAC {
+  def sign(m: Chunk[Byte], k: Keyset[MACAlgorithm]): MACObject[Chunk[Byte]]
+  def verify(m: Chunk[Byte], mac: MACObject[Chunk[Byte]], k: Keyset[MACAlgorithm]): Boolean
+
+  def sign(m: String, k: Keyset[MACAlgorithm], charset: Charset): MACObject[String]
+  def verify(m: String, mac: MACObject[String], k: Keyset[MACAlgorithm], charset: Charset): Boolean
+}
+
+private object MACLive extends MAC {
+  override def sign(m: Chunk[Byte], k: Keyset[MACAlgorithm]): MACObject[Chunk[Byte]] =
+    MACObject(
+      Chunk.fromArray(
+        k.handle.getPrimitive(classOf[TinkMac]).computeMac(m.toArray)
+      )
+    )
+
+  override def verify(
+    m: Chunk[Byte],
+    mac: MACObject[Chunk[Byte]],
+    k: Keyset[MACAlgorithm]
+  ): Boolean =
+    Try(k.handle.getPrimitive(classOf[TinkMac]).verifyMac(mac.value.toArray, m.toArray))
+      .map(_ => true)
+      .toOption
+      .getOrElse(false)
+
+  override def sign(m: String, k: Keyset[MACAlgorithm], charset: Charset): MACObject[String] =
+    MACObject(
+      ByteHelpers.toB64String(
+        sign(
+          m = Chunk.fromArray(
+            // May throw CharacterCodingException
+            m.getBytes(charset)
+          ),
+          k = k
+        ).value
+      )
+    )
+
+  override def verify(m: String, mac: MACObject[String], k: Keyset[MACAlgorithm], charset: Charset): Boolean =
+    ByteHelpers
+      .fromB64String(mac.value)
+      .exists(d =>
+        verify(
+          m = Chunk.fromArray(
+            // May throw CharacterCodingException
+            m.getBytes(charset)
+          ),
+          MACObject(d),
+          k = k
+        )
+      )
+
+}
+
 object MAC {
 
-  type MAC = Has[MAC.Service]
-
-  trait Service {
-    def sign(m: Chunk[Byte], k: Keyset[MACAlgorithm]): MACObject[Chunk[Byte]]
-    def verify(m: Chunk[Byte], mac: MACObject[Chunk[Byte]], k: Keyset[MACAlgorithm]): Boolean
-
-    def sign(m: String, k: Keyset[MACAlgorithm], charset: Charset): MACObject[String]
-    def verify(m: String, mac: MACObject[String], k: Keyset[MACAlgorithm], charset: Charset): Boolean
-  }
-
-  val live: TaskLayer[MAC] = Task
+  val live: TaskLayer[Has[MAC]] = Task
     .effect(MacConfig.register())
-    .as {
-      new Service {
-        override def sign(m: Chunk[Byte], k: Keyset[MACAlgorithm]): MACObject[Chunk[Byte]] =
-          MACObject(
-            Chunk.fromArray(
-              k.handle.getPrimitive(classOf[TinkMac]).computeMac(m.toArray)
-            )
-          )
-
-        override def verify(
-          m: Chunk[Byte],
-          mac: MACObject[Chunk[Byte]],
-          k: Keyset[MACAlgorithm]
-        ): Boolean =
-          Try(k.handle.getPrimitive(classOf[TinkMac]).verifyMac(mac.value.toArray, m.toArray))
-            .map(_ => true)
-            .toOption
-            .getOrElse(false)
-
-        override def sign(m: String, k: Keyset[MACAlgorithm], charset: Charset): MACObject[String] =
-          MACObject(
-            ByteHelpers.toB64String(
-              sign(
-                m = Chunk.fromArray(
-                  // May throw CharacterCodingException
-                  m.getBytes(charset)
-                ),
-                k = k
-              ).value
-            )
-          )
-
-        override def verify(m: String, mac: MACObject[String], k: Keyset[MACAlgorithm], charset: Charset): Boolean =
-          ByteHelpers
-            .fromB64String(mac.value)
-            .exists(d =>
-              verify(
-                m = Chunk.fromArray(
-                  // May throw CharacterCodingException
-                  m.getBytes(charset)
-                ),
-                MACObject(d),
-                k = k
-              )
-            )
-
-      }
-    }
+    .as(MACLive)
     .toLayer
 
   /**
@@ -111,7 +109,7 @@ object MAC {
    * @param k: the secret key to use for signing
    * @return the MAC of `m`
    */
-  def sign(m: Chunk[Byte], k: Keyset[MACAlgorithm]): RIO[MAC, MACObject[Chunk[Byte]]] =
+  def sign(m: Chunk[Byte], k: Keyset[MACAlgorithm]): RIO[Has[MAC], MACObject[Chunk[Byte]]] =
     ZIO.access(_.get.sign(m, k))
 
   /**
@@ -122,7 +120,7 @@ object MAC {
    * @param k: the secret key used for signing.
    * @return true if `mac` is a valid MAC for `m` under `k`, and false otherwise.
    */
-  def verify(m: Chunk[Byte], mac: MACObject[Chunk[Byte]], k: Keyset[MACAlgorithm]): RIO[MAC, Boolean] =
+  def verify(m: Chunk[Byte], mac: MACObject[Chunk[Byte]], k: Keyset[MACAlgorithm]): RIO[Has[MAC], Boolean] =
     ZIO.access(_.get.verify(m, mac, k))
 
   /**
@@ -133,7 +131,7 @@ object MAC {
    * @param charset: the `Charset` of `m`.
    * @return the MAC of `m`
    */
-  def sign(m: String, k: Keyset[MACAlgorithm], charset: Charset): RIO[MAC, MACObject[String]] =
+  def sign(m: String, k: Keyset[MACAlgorithm], charset: Charset): RIO[Has[MAC], MACObject[String]] =
     ZIO.access(_.get.sign(m, k, charset))
 
   /**
@@ -150,7 +148,7 @@ object MAC {
     mac: MACObject[String],
     k: Keyset[MACAlgorithm],
     charset: Charset
-  ): RIO[MAC, Boolean] =
+  ): RIO[Has[MAC], Boolean] =
     ZIO.access(_.get.verify(m, mac, k, charset))
 
 }
