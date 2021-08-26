@@ -4,8 +4,8 @@ import java.nio.charset.Charset
 
 import scala.util.Try
 
-import com.google.crypto.tink.mac.{ AesCmacKeyManager, HmacKeyManager, MacConfig }
-import com.google.crypto.tink.{ KeyTemplate => TinkKeyTemplate, Mac => TinkMac }
+import com.google.crypto.tink.mac.MacConfig
+import com.google.crypto.tink.{ KeyTemplate => TinkKeyTemplate, KeyTemplates, Mac => TinkMac }
 
 import zio._
 import zio.crypto.ByteHelpers
@@ -24,11 +24,16 @@ object MACAlgorithm {
     new KeyTemplate[MACAlgorithm] with SymmetricKeyset[MACAlgorithm] {
       override def getTinkKeyTemplate(a: MACAlgorithm): TinkKeyTemplate =
         a match {
-          case MACAlgorithm.HMACSHA256           => HmacKeyManager.hmacSha256Template()
-          case MACAlgorithm.HMACSHA256HalfDigest => HmacKeyManager.hmacSha256HalfDigestTemplate()
-          case MACAlgorithm.HMACSHA512           => HmacKeyManager.hmacSha512Template()
-          case MACAlgorithm.HMACSHA512HalfDigest => HmacKeyManager.hmacSha512HalfDigestTemplate()
-          case MACAlgorithm.AES256CMAC           => AesCmacKeyManager.aes256CmacTemplate()
+          case MACAlgorithm.HMACSHA256           =>
+            KeyTemplates.get("HMAC_SHA256_256BITTAG")
+          case MACAlgorithm.HMACSHA256HalfDigest =>
+            KeyTemplates.get("HMAC_SHA256_128BITTAG")
+          case MACAlgorithm.HMACSHA512           =>
+            KeyTemplates.get("HMAC_SHA512_512BITTAG")
+          case MACAlgorithm.HMACSHA512HalfDigest =>
+            KeyTemplates.get("HMAC_SHA512_256BITTAG")
+          case MACAlgorithm.AES256CMAC           =>
+            KeyTemplates.get("AES256_CMAC")
         }
     }
 }

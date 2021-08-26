@@ -2,8 +2,8 @@ package zio.crypto.encryption
 
 import java.nio.charset.Charset
 
-import com.google.crypto.tink.aead.{ AeadConfig, AesGcmKeyManager }
-import com.google.crypto.tink.{ Aead, KeyTemplate => TinkKeyTemplate }
+import com.google.crypto.tink.aead.AeadConfig
+import com.google.crypto.tink.{ Aead, KeyTemplate => TinkKeyTemplate, KeyTemplates }
 
 import zio._
 import zio.crypto.ByteHelpers
@@ -19,8 +19,10 @@ object SymmetricEncryptionAlgorithm {
     new KeyTemplate[SymmetricEncryptionAlgorithm] with SymmetricKeyset[SymmetricEncryptionAlgorithm] {
       override def getTinkKeyTemplate(a: SymmetricEncryptionAlgorithm): TinkKeyTemplate =
         a match {
-          case SymmetricEncryptionAlgorithm.AES128GCM => AesGcmKeyManager.aes128GcmTemplate()
-          case SymmetricEncryptionAlgorithm.AES256GCM => AesGcmKeyManager.aes256GcmTemplate()
+          case SymmetricEncryptionAlgorithm.AES128GCM =>
+            KeyTemplates.get("AES128_GCM")
+          case SymmetricEncryptionAlgorithm.AES256GCM =>
+            KeyTemplates.get("AES256_GCM")
         }
     }
 }

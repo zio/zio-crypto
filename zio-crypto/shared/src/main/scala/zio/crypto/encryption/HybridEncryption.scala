@@ -2,8 +2,8 @@ package zio.crypto.encryption
 
 import java.nio.charset.Charset
 
-import com.google.crypto.tink.hybrid.{ EciesAeadHkdfPrivateKeyManager, HybridConfig }
-import com.google.crypto.tink.{ HybridDecrypt, HybridEncrypt, KeyTemplate => TinkKeyTemplate }
+import com.google.crypto.tink.hybrid.HybridConfig
+import com.google.crypto.tink.{ HybridDecrypt, HybridEncrypt, KeyTemplate => TinkKeyTemplate, KeyTemplates }
 
 import zio._
 import zio.crypto.ByteHelpers
@@ -20,9 +20,9 @@ object HybridEncryptionAlgorithm {
       override def getTinkKeyTemplate(a: HybridEncryptionAlgorithm): TinkKeyTemplate =
         a match {
           case HybridEncryptionAlgorithm.EciesP256HkdfHmacSha256Aes128CtrHmacSha256 =>
-            EciesAeadHkdfPrivateKeyManager.eciesP256HkdfHmacSha256Aes128CtrHmacSha256Template()
+            KeyTemplates.get("ECIES_P256_HKDF_HMAC_SHA256_AES128_CTR_HMAC_SHA256")
           case HybridEncryptionAlgorithm.EciesP256HkdfHmacSha256Aes128Gcm           =>
-            EciesAeadHkdfPrivateKeyManager.eciesP256HkdfHmacSha256Aes128GcmTemplate()
+            KeyTemplates.get("ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM")
         }
     }
 }
