@@ -38,12 +38,12 @@ trait SymmetricEncryption {
 
 private object SymmetricEncryptionLive extends SymmetricEncryption {
   override def encrypt(plainText: Chunk[Byte], key: KEY): Task[CipherText[Chunk[Byte]]] =
-    Task.effect(
+    Task.attempt(
       CipherText(Chunk.fromArray(key.handle.getPrimitive(classOf[Aead]).encrypt(plainText.toArray, null)))
     )
 
   override def decrypt(ciphertext: CipherText[Chunk[Byte]], key: KEY): Task[Chunk[Byte]] =
-    Task.effect(
+    Task.attempt(
       Chunk.fromArray(key.handle.getPrimitive(classOf[Aead]).decrypt(ciphertext.value.toArray, null))
     )
 
@@ -64,8 +64,8 @@ private object SymmetricEncryptionLive extends SymmetricEncryption {
 object SymmetricEncryption {
   type KEY = Keyset[SymmetricEncryptionAlgorithm]
 
-  val live: TaskLayer[Has[SymmetricEncryption]] = Task
-    .effect(AeadConfig.register())
+  val live: TaskLayer[SymmetricEncryption] = Task
+    .attempt(AeadConfig.register())
     .as(SymmetricEncryptionLive)
     .toLayer
 
@@ -76,8 +76,8 @@ object SymmetricEncryption {
    * @param key: The key to use to encrypt the message.
    * @return the ciphertext generated from encrypting `plainText` with `key`.
    */
-  def encrypt(plainText: Chunk[Byte], key: KEY): RIO[Has[SymmetricEncryption], CipherText[Chunk[Byte]]] =
-    ZIO.accessM(_.get.encrypt(plainText, key))
+  def encrypt(plainText: Chunk[Byte], key: KEY): RIO[SymmetricEncryption, CipherText[Chunk[Byte]]] =
+    ZIO.accessZIO(_.get.encrypt(plainText, key))
 
   /**
    * Encrypts the given `plainText`.
@@ -87,8 +87,8 @@ object SymmetricEncryption {
    * @param charset: The charset of `plainText`.
    * @return the ciphertext generated from encrypting `plainText` with `key`.
    */
-  def encrypt(plainText: String, key: KEY, charset: Charset): RIO[Has[SymmetricEncryption], CipherText[String]] =
-    ZIO.accessM(_.get.encrypt(plainText, key, charset))
+  def encrypt(plainText: String, key: KEY, charset: Charset): RIO[SymmetricEncryption, CipherText[String]] =
+    ZIO.accessZIO(_.get.encrypt(plainText, key, charset))
 
   /**
    * Decrypts the given `ciphertext`.
@@ -97,8 +97,8 @@ object SymmetricEncryption {
    * @param key: The key to use to decrypt the ciphertext
    * @return the plaintext decrypted from the `CipherText` `ciphertext` under the `SymmetricEncryptionKey` `key`.
    */
-  def decrypt(ciphertext: CipherText[Chunk[Byte]], key: KEY): RIO[Has[SymmetricEncryption], Chunk[Byte]] =
-    ZIO.accessM(_.get.decrypt(ciphertext, key))
+  def decrypt(ciphertext: CipherText[Chunk[Byte]], key: KEY): RIO[SymmetricEncryption, Chunk[Byte]] =
+    ZIO.accessZIO(_.get.decrypt(ciphertext, key))
 
   /**
    * Decrypts the given `ciphertext`.
@@ -108,7 +108,7 @@ object SymmetricEncryption {
    * @param charset: The charset of the original plaintext.
    * @return the plaintext decrypted from the `CipherText` `ciphertext` under the `SymmetricEncryptionKey` `key`.
    */
-  def decrypt(ciphertext: CipherText[String], key: KEY, charset: Charset): RIO[Has[SymmetricEncryption], String] =
-    ZIO.accessM(_.get.decrypt(ciphertext, key, charset))
+  def decrypt(ciphertext: CipherText[String], key: KEY, charset: Charset): RIO[SymmetricEncryption, String] =
+    ZIO.accessZIO(_.get.decrypt(ciphertext, key, charset))
 
 }

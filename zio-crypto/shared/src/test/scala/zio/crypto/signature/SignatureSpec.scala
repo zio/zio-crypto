@@ -5,12 +5,13 @@ import java.nio.charset.StandardCharsets.US_ASCII
 import zio.crypto.keyset.KeysetManager
 import zio.test.Assertion._
 import zio.test._
+import zio.test.{ Gen, ZIOSpecDefault }
 
-object SignatureSpec extends DefaultRunnableSpec {
+object SignatureSpec extends ZIOSpecDefault {
   private def testAlgorithm(alg: SignatureAlgorithm) = suite(alg.toString)(
     suite("bytes")(
-      testM("verify(m, sign(m)) = true") {
-        checkM(Gen.chunkOf(Gen.anyByte)) { m =>
+      test("verify(m, sign(m)) = true") {
+        check(Gen.chunkOf(Gen.byte)) { m =>
           for {
             k         <- KeysetManager.generateNewAsymmetric(alg)
             signature <- Signature.sign(m, k)
@@ -18,8 +19,8 @@ object SignatureSpec extends DefaultRunnableSpec {
           } yield assert(verified)(isTrue)
         }
       },
-      testM("verify(m1, sign(m0)) = false") {
-        checkM(Gen.chunkOf(Gen.anyByte), Gen.chunkOf(Gen.anyByte)) {
+      test("verify(m1, sign(m0)) = false") {
+        check(Gen.chunkOf(Gen.byte), Gen.chunkOf(Gen.byte)) {
           case (m0, m1) if m0 != m1 =>
             for {
               k         <- KeysetManager.generateNewAsymmetric(alg)
@@ -31,8 +32,8 @@ object SignatureSpec extends DefaultRunnableSpec {
       }
     ),
     suite("string")(
-      testM("verify(m, sign(m)) = true") {
-        checkM(Gen.anyASCIIString) { m =>
+      test("verify(m, sign(m)) = true") {
+        check(Gen.asciiString) { m =>
           for {
             k         <- KeysetManager.generateNewAsymmetric(alg)
             signature <- Signature.sign(m, k, US_ASCII)
@@ -40,8 +41,8 @@ object SignatureSpec extends DefaultRunnableSpec {
           } yield assert(verified)(isTrue)
         }
       },
-      testM("verify(m1, sign(m0)) = false") {
-        checkM(Gen.anyASCIIString, Gen.anyASCIIString) {
+      test("verify(m1, sign(m0)) = false") {
+        check(Gen.asciiString, Gen.asciiString) {
           case (m0, m1) if m0 != m1 =>
             for {
               k         <- KeysetManager.generateNewAsymmetric(alg)

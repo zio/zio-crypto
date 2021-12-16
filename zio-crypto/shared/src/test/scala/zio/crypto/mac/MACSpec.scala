@@ -4,17 +4,18 @@ import java.nio.charset.StandardCharsets.US_ASCII
 
 import zio._
 import zio.crypto.keyset.KeysetManager
-import zio.random.Random
 import zio.test.Assertion._
 import zio.test._
+import zio.Random
+import zio.test.{ Gen, Sized, ZIOSpecDefault }
 
-object MACSpec extends DefaultRunnableSpec {
-  private val genByteChunk: Gen[Random with Sized, Chunk[Byte]] = Gen.chunkOf(Gen.anyByte)
+object MACSpec extends ZIOSpecDefault {
+  private val genByteChunk: Gen[Random with Sized, Chunk[Byte]] = Gen.chunkOf(Gen.byte)
 
   private def testAlgorithm(alg: MACAlgorithm) = suite(alg.toString)(
     suite("strings")(
-      testM("verify(m, sign(m, k), k) = true") {
-        checkM(Gen.anyASCIIString) { m =>
+      test("verify(m, sign(m, k), k) = true") {
+        check(Gen.asciiString) { m =>
           for {
             k        <- KeysetManager.generateNewSymmetric(alg)
             mac      <- MAC.sign(m, k, US_ASCII)
@@ -22,16 +23,16 @@ object MACSpec extends DefaultRunnableSpec {
           } yield assert(verified)(isTrue)
         }
       },
-      testM("verify(m, 'garbage', k) = false") {
-        checkM(Gen.anyASCIIString, Gen.anyASCIIString) { (m0, m1) =>
+      test("verify(m, 'garbage', k) = false") {
+        check(Gen.asciiString, Gen.asciiString) { (m0, m1) =>
           for {
             k        <- KeysetManager.generateNewSymmetric(alg)
             verified <- MAC.verify(m0, MACObject(m1), k, US_ASCII)
           } yield assert(verified)(isFalse)
         }
       },
-      testM("verify(m1, sign(m1, k0), k1) = false") {
-        checkM(Gen.anyASCIIString) { m =>
+      test("verify(m1, sign(m1, k0), k1) = false") {
+        check(Gen.asciiString) { m =>
           for {
             k0       <- KeysetManager.generateNewSymmetric(alg)
             k1       <- KeysetManager.generateNewSymmetric(alg)
@@ -40,8 +41,8 @@ object MACSpec extends DefaultRunnableSpec {
           } yield assert(verified)(isFalse)
         }
       },
-      testM("verify(m1, sign(m0, k), k) = false") {
-        checkM(Gen.anyASCIIString, Gen.anyASCIIString) {
+      test("verify(m1, sign(m0, k), k) = false") {
+        check(Gen.asciiString, Gen.asciiString) {
           case (m0, m1) if m0 != m1 =>
             for {
               k        <- KeysetManager.generateNewSymmetric(alg)
@@ -53,8 +54,8 @@ object MACSpec extends DefaultRunnableSpec {
       }
     ),
     suite("bytes")(
-      testM("verify(m, sign(m, k), k) = true") {
-        checkM(genByteChunk) { m =>
+      test("verify(m, sign(m, k), k) = true") {
+        check(genByteChunk) { m =>
           for {
             k        <- KeysetManager.generateNewSymmetric(alg)
             mac      <- MAC.sign(m, k)
@@ -62,16 +63,16 @@ object MACSpec extends DefaultRunnableSpec {
           } yield assert(verified)(isTrue)
         }
       },
-      testM("verify(m1, 'garbage', k) = false") {
-        checkM(genByteChunk, genByteChunk) { (m0, m1) =>
+      test("verify(m1, 'garbage', k) = false") {
+        check(genByteChunk, genByteChunk) { (m0, m1) =>
           for {
             k        <- KeysetManager.generateNewSymmetric(alg)
             verified <- MAC.verify(m0, MACObject(m1), k)
           } yield assert(verified)(isFalse)
         }
       },
-      testM("verify(m1, sign(m1, k0), k1) = false") {
-        checkM(genByteChunk) { m =>
+      test("verify(m1, sign(m1, k0), k1) = false") {
+        check(genByteChunk) { m =>
           for {
             k0       <- KeysetManager.generateNewSymmetric(alg)
             k1       <- KeysetManager.generateNewSymmetric(alg)
@@ -80,8 +81,8 @@ object MACSpec extends DefaultRunnableSpec {
           } yield assert(verified)(isFalse)
         }
       },
-      testM("verify(m1, sign(m0, k), k) = false") {
-        checkM(genByteChunk, genByteChunk) {
+      test("verify(m1, sign(m0, k), k) = false") {
+        check(genByteChunk, genByteChunk) {
           case (m0, m1) if m0 != m1 =>
             for {
               k        <- KeysetManager.generateNewSymmetric(alg)

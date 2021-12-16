@@ -126,7 +126,7 @@ private[crypto] object HashLive extends Hash {
 
 object Hash {
 
-  val live: ULayer[Has[Hash]] = ZLayer.succeed(HashLive)
+  val live: ULayer[Hash] = ZLayer.succeed(HashLive)
 
   /**
    * Hashes the message `m` using the algorithm `alg`.
@@ -139,7 +139,7 @@ object Hash {
         "unsecure(implicit secure => Hash.hash(m))"
     ) secure: Secure[Alg],
     alg: Alg
-  ): RIO[Has[Hash], MessageDigest[Chunk[Byte]]] =
+  ): RIO[Hash, MessageDigest[Chunk[Byte]]] =
     ZIO.access(_.get.hash(m))
 
   /**
@@ -160,7 +160,7 @@ object Hash {
     )
     secure: Secure[Alg],
     alg: Alg
-  ): RIO[Has[Hash], Boolean] =
+  ): RIO[Hash, Boolean] =
     ZIO.access(_.get.verify(m, digest))
 
   /**
@@ -174,7 +174,7 @@ object Hash {
         "unsecure(implicit secure => Hash.hash(m))"
     ) secure: Secure[Alg],
     alg: Alg
-  ): RIO[Has[Hash], MessageDigest[String]] =
+  ): RIO[Hash, MessageDigest[String]] =
     ZIO.access(_.get.hash(m, charset))
 
   /**
@@ -192,7 +192,7 @@ object Hash {
     )
     secure: Secure[Alg],
     alg: Alg
-  ): RIO[Has[Hash], Boolean] =
+  ): RIO[Hash, Boolean] =
     ZIO.access(_.get.verify(m, digest, charset))
 
 }

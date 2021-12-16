@@ -5,13 +5,14 @@ import java.nio.charset.StandardCharsets.US_ASCII
 import zio.crypto.keyset.KeysetManager
 import zio.test.Assertion._
 import zio.test._
+import zio.test.{ Gen, ZIOSpecDefault }
 
-object SymmetricEncryptionSpec extends DefaultRunnableSpec {
+object SymmetricEncryptionSpec extends ZIOSpecDefault {
 
   private def testAlgorithm(algorithm: SymmetricEncryptionAlgorithm) = suite(algorithm.toString)(
     suite("bytes")(
-      testM("encrypt(m, k) != encrypt(m, k)") {
-        checkM(Gen.chunkOf(Gen.anyByte)) { m =>
+      test("encrypt(m, k) != encrypt(m, k)") {
+        check(Gen.chunkOf(Gen.byte)) { m =>
           for {
             key         <- KeysetManager.generateNewSymmetric(algorithm)
             ciphertext1 <- SymmetricEncryption.encrypt(m, key)
@@ -19,8 +20,8 @@ object SymmetricEncryptionSpec extends DefaultRunnableSpec {
           } yield assert(ciphertext1)(not(equalTo(ciphertext2)))
         }
       },
-      testM("decrypt(encrypt(m, k), k) == m") {
-        checkM(Gen.chunkOf(Gen.anyByte)) { m =>
+      test("decrypt(encrypt(m, k), k) == m") {
+        check(Gen.chunkOf(Gen.byte)) { m =>
           for {
             key        <- KeysetManager.generateNewSymmetric(algorithm)
             ciphertext <- SymmetricEncryption.encrypt(m, key)
@@ -30,8 +31,8 @@ object SymmetricEncryptionSpec extends DefaultRunnableSpec {
       }
     ),
     suite("string")(
-      testM("encrypt(m, k) != encrypt(m, k)") {
-        checkM(Gen.anyASCIIString) { m =>
+      test("encrypt(m, k) != encrypt(m, k)") {
+        check(Gen.asciiString) { m =>
           for {
             key         <- KeysetManager.generateNewSymmetric(algorithm)
             ciphertext1 <- SymmetricEncryption.encrypt(m, key, US_ASCII)
@@ -39,8 +40,8 @@ object SymmetricEncryptionSpec extends DefaultRunnableSpec {
           } yield assert(ciphertext1)(not(equalTo(ciphertext2)))
         }
       },
-      testM("decrypt(encrypt(m, k), k) == m") {
-        checkM(Gen.anyASCIIString) { m =>
+      test("decrypt(encrypt(m, k), k) == m") {
+        check(Gen.asciiString) { m =>
           for {
             key        <- KeysetManager.generateNewSymmetric(algorithm)
             ciphertext <- SymmetricEncryption.encrypt(m, key, US_ASCII)

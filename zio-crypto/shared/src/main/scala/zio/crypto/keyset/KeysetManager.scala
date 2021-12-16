@@ -13,7 +13,7 @@ import com.google.crypto.tink.{
 }
 
 import zio.crypto.Secure
-import zio.{ Has, RIO, Task, ULayer, ZIO, ZLayer }
+import zio.{ RIO, Task, ULayer, ZIO, ZLayer }
 
 trait KeysetManager {
   def generateNewAsymmetric[Family, A <: Family](alg: A)(implicit
@@ -42,7 +42,7 @@ private object KeysetManagerLive extends KeysetManager {
     secure: Secure[Keyset[Alg]]
   ): Task[Unit] =
     Task
-      .effect(
+      .attempt(
         CleartextKeysetHandle.write(key.handle, JsonKeysetWriter.withFile(path.toFile))
       )
 
@@ -50,7 +50,7 @@ private object KeysetManagerLive extends KeysetManager {
     secure: Secure[Keyset[Family]],
     template: KeyTemplate[Family]
   ): Task[Keyset[Family]] =
-    Task.effect {
+    Task.attempt {
       new Keyset(CleartextKeysetHandle.read(JsonKeysetReader.withFile(path.toFile)))
     }
 
@@ -58,7 +58,7 @@ private object KeysetManagerLive extends KeysetManager {
     key: Keyset[Family],
     fn: TinkKeysetManager => TinkKeysetManager
   ): Task[Keyset[Family]] =
-    Task.effect {
+    Task.attempt {
       new Keyset[Family](
         fn(TinkKeysetManager.withKeysetHandle(key.handle)).getKeysetHandle
       )(key.template)
@@ -85,12 +85,12 @@ private object KeysetManagerLive extends KeysetManager {
   override def generateNewSymmetric[Family, A <: Family](alg: A)(implicit
     t: KeyTemplate[Family] with SymmetricKeyset[Family]
   ): Task[Keyset[Family]] =
-    Task.effect(new Keyset(TinkKeysetHandle.generateNew(t.getTinkKeyTemplate(alg))))
+    Task.attempt(new Keyset(TinkKeysetHandle.generateNew(t.getTinkKeyTemplate(alg))))
 
   override def generateNewAsymmetric[Family, A <: Family](alg: A)(implicit
     t: KeyTemplate[Family] with AsymmetricKeyset[Family]
   ): Task[PrivateKeyset[Family]] =
-    Task.effect {
+    Task.attempt {
       val handle = TinkKeysetHandle.generateNew(t.getTinkKeyTemplate(alg))
       new PrivateKeyset(
         handle = handle,
@@ -101,7 +101,7 @@ private object KeysetManagerLive extends KeysetManager {
 }
 
 object KeysetManager {
-  val live: ULayer[Has[KeysetManager]] = ZLayer.succeed(KeysetManagerLive)
+  val live: ULayer[KeysetManager] = ZLayer.succeed(KeysetManagerLive)
 
   def readFromFile[Family](path: Path)(implicit
     @implicitNotFound(
@@ -112,8 +112,8 @@ object KeysetManager {
     )
     secure: Secure[Keyset[Family]],
     template: KeyTemplate[Family]
-  ): RIO[Has[KeysetManager], Keyset[Family]] =
-    ZIO.accessM(_.get.readFromFile(path))
+  ): RIO[KeysetManager, Keyset[Family]] =
+    ZIO.accessZIO(_.get.readFromFile(path))
 
   def saveToFile[Family](key: Keyset[Family], path: Path)(implicit
     @implicitNotFound(
@@ -124,37 +124,37 @@ object KeysetManager {
     )
     secure: Secure[Keyset[Family]],
     template: KeyTemplate[Family]
-  ): RIO[Has[KeysetManager], Unit] = ZIO.accessM(_.get.saveToFile(key, path))
+  ): RIO[KeysetManager, Unit] = ZIO.accessZIO(_.get.saveToFile(key, path))
 
   def generateNewSymmetric[Family, A <: Family](alg: A)(implicit
     t: KeyTemplate[Family] with SymmetricKeyset[Family]
-  ): RIO[Has[KeysetManager], Keyset[Family]] =
-    ZIO.accessM(_.get.generateNewSymmetric(alg))
+  ): RIO[KeysetManager, Keyset[Family]] =
+    ZIO.accessZIO(_.get.generateNewSymmetric(alg))
 
   def generateNewAsymmetric[Family, A <: Family](alg: A)(implicit
     t: KeyTemplate[Family] with AsymmetricKeyset[Family]
-  ): RIO[Has[KeysetManager], PrivateKeyset[Family]] =
-    ZIO.accessM(_.get.generateNewAsymmetric(alg))
+  ): RIO[KeysetManager, PrivateKeyset[Family]] =
+    ZIO.accessZIO(_.get.generateNewAsymmetric(alg))
 
   def add[Family, Algorithm <: Family](
     key: Keyset[Family],
     alg: Algorithm
-  ): RIO[Has[KeysetManager], Keyset[Family]] =
-    ZIO.accessM(_.get.add(key, alg))
+  ): RIO[KeysetManager, Keyset[Family]] =
+    ZIO.accessZIO(_.get.add(key, alg))
 
-  def enable[Family](key: Keyset[Family], id: KeyId): RIO[Has[KeysetManager], Keyset[Family]] =
-    ZIO.accessM(_.get.enable(key, id))
+  def enable[Family](key: Keyset[Family], id: KeyId): RIO[KeysetManager, Keyset[Family]] =
+    ZIO.accessZIO(_.get.enable(key, id))
 
-  def disable[Family](key: Keyset[Family], id: KeyId): RIO[Has[KeysetManager], Keyset[Family]] =
-    ZIO.accessM(_.get.disable(key, id))
+  def disable[Family](key: Keyset[Family], id: KeyId): RIO[KeysetManager, Keyset[Family]] =
+    ZIO.accessZIO(_.get.disable(key, id))
 
-  def setPrimary[Family](key: Keyset[Family], id: KeyId): RIO[Has[KeysetManager], Keyset[Family]] =
-    ZIO.accessM(_.get.setPrimary(key, id))
+  def setPrimary[Family](key: Keyset[Family], id: KeyId): RIO[KeysetManager, Keyset[Family]] =
+    ZIO.accessZIO(_.get.setPrimary(key, id))
 
-  def delete[Family](key: Keyset[Family], id: KeyId): RIO[Has[KeysetManager], Keyset[Family]] =
-    ZIO.accessM(_.get.delete(key, id))
+  def delete[Family](key: Keyset[Family], id: KeyId): RIO[KeysetManager, Keyset[Family]] =
+    ZIO.accessZIO(_.get.delete(key, id))
 
-  def destroy[Family](key: Keyset[Family], id: KeyId): RIO[Has[KeysetManager], Keyset[Family]] =
-    ZIO.accessM(_.get.destroy(key, id))
+  def destroy[Family](key: Keyset[Family], id: KeyId): RIO[KeysetManager, Keyset[Family]] =
+    ZIO.accessZIO(_.get.destroy(key, id))
 
 }

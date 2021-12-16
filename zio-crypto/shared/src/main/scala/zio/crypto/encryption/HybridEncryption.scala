@@ -39,12 +39,12 @@ trait HybridEncryption {
 
 private object HybridEncryptionLive extends HybridEncryption {
   override def encrypt(plainText: Chunk[Byte], key: PublicKey): Task[CipherText[Chunk[Byte]]] =
-    Task.effect(
+    Task.attempt(
       CipherText(Chunk.fromArray(key.handle.getPrimitive(classOf[HybridEncrypt]).encrypt(plainText.toArray, null)))
     )
 
   override def decrypt(ciphertext: CipherText[Chunk[Byte]], key: PrivateKey): Task[Chunk[Byte]] =
-    Task.effect(
+    Task.attempt(
       Chunk.fromArray(key.handle.getPrimitive(classOf[HybridDecrypt]).decrypt(ciphertext.value.toArray, null))
     )
 
@@ -66,8 +66,8 @@ object HybridEncryption {
   type PrivateKey = PrivateKeyset[HybridEncryptionAlgorithm]
   type PublicKey  = PublicKeyset[HybridEncryptionAlgorithm]
 
-  val live: TaskLayer[Has[HybridEncryption]] = Task
-    .effect(HybridConfig.register())
+  val live: TaskLayer[HybridEncryption] = Task
+    .attempt(HybridConfig.register())
     .as(HybridEncryptionLive)
     .toLayer
 
@@ -78,8 +78,8 @@ object HybridEncryption {
    * @param key: The public key to use to encrypt the message.
    * @return the `CipherText` generated from encrypting `plainText` with `key`.
    */
-  def encrypt(plainText: Chunk[Byte], key: PublicKey): RIO[Has[HybridEncryption], CipherText[Chunk[Byte]]] =
-    ZIO.accessM(_.get.encrypt(plainText, key))
+  def encrypt(plainText: Chunk[Byte], key: PublicKey): RIO[HybridEncryption, CipherText[Chunk[Byte]]] =
+    ZIO.accessZIO(_.get.encrypt(plainText, key))
 
   /**
    * Encrypts the given `plainText`.
@@ -89,8 +89,8 @@ object HybridEncryption {
    * @param charset: The charset of `plainText`.
    * @return the `CipherText` generated from encrypting `plainText` with `key`.
    */
-  def encrypt(plainText: String, key: PublicKey, charset: Charset): RIO[Has[HybridEncryption], CipherText[String]] =
-    ZIO.accessM(_.get.encrypt(plainText, key, charset))
+  def encrypt(plainText: String, key: PublicKey, charset: Charset): RIO[HybridEncryption, CipherText[String]] =
+    ZIO.accessZIO(_.get.encrypt(plainText, key, charset))
 
   /**
    * Decrypts the given `ciphertext`.
@@ -99,8 +99,8 @@ object HybridEncryption {
    * @param key: The private key to use to decrypt the ciphertext
    * @return the plaintext decrypted from `ciphertext` under the `key`.
    */
-  def decrypt(ciphertext: CipherText[Chunk[Byte]], key: PrivateKey): RIO[Has[HybridEncryption], Chunk[Byte]] =
-    ZIO.accessM(_.get.decrypt(ciphertext, key))
+  def decrypt(ciphertext: CipherText[Chunk[Byte]], key: PrivateKey): RIO[HybridEncryption, Chunk[Byte]] =
+    ZIO.accessZIO(_.get.decrypt(ciphertext, key))
 
   /**
    * Decrypts the given `ciphertext`.
@@ -110,7 +110,7 @@ object HybridEncryption {
    * @param charset: The charset of the original plaintext.
    * @return the plaintext decrypted from `ciphertext` under the `key`.
    */
-  def decrypt(ciphertext: CipherText[String], key: PrivateKey, charset: Charset): RIO[Has[HybridEncryption], String] =
-    ZIO.accessM(_.get.decrypt(ciphertext, key, charset))
+  def decrypt(ciphertext: CipherText[String], key: PrivateKey, charset: Charset): RIO[HybridEncryption, String] =
+    ZIO.accessZIO(_.get.decrypt(ciphertext, key, charset))
 
 }

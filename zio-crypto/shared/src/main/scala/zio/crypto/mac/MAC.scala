@@ -97,8 +97,8 @@ private object MACLive extends MAC {
 
 object MAC {
 
-  val live: TaskLayer[Has[MAC]] = Task
-    .effect(MacConfig.register())
+  val live: TaskLayer[MAC] = Task
+    .attempt(MacConfig.register())
     .as(MACLive)
     .toLayer
 
@@ -109,7 +109,7 @@ object MAC {
    * @param k: the secret key to use for signing
    * @return the MAC of `m`
    */
-  def sign(m: Chunk[Byte], k: Keyset[MACAlgorithm]): RIO[Has[MAC], MACObject[Chunk[Byte]]] =
+  def sign(m: Chunk[Byte], k: Keyset[MACAlgorithm]): RIO[MAC, MACObject[Chunk[Byte]]] =
     ZIO.access(_.get.sign(m, k))
 
   /**
@@ -120,7 +120,7 @@ object MAC {
    * @param k: the secret key used for signing.
    * @return true if `mac` is a valid MAC for `m` under `k`, and false otherwise.
    */
-  def verify(m: Chunk[Byte], mac: MACObject[Chunk[Byte]], k: Keyset[MACAlgorithm]): RIO[Has[MAC], Boolean] =
+  def verify(m: Chunk[Byte], mac: MACObject[Chunk[Byte]], k: Keyset[MACAlgorithm]): RIO[MAC, Boolean] =
     ZIO.access(_.get.verify(m, mac, k))
 
   /**
@@ -131,7 +131,7 @@ object MAC {
    * @param charset: the `Charset` of `m`.
    * @return the MAC of `m`
    */
-  def sign(m: String, k: Keyset[MACAlgorithm], charset: Charset): RIO[Has[MAC], MACObject[String]] =
+  def sign(m: String, k: Keyset[MACAlgorithm], charset: Charset): RIO[MAC, MACObject[String]] =
     ZIO.access(_.get.sign(m, k, charset))
 
   /**
@@ -148,7 +148,7 @@ object MAC {
     mac: MACObject[String],
     k: Keyset[MACAlgorithm],
     charset: Charset
-  ): RIO[Has[MAC], Boolean] =
+  ): RIO[MAC, Boolean] =
     ZIO.access(_.get.verify(m, mac, k, charset))
 
 }

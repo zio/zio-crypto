@@ -37,7 +37,7 @@ private final case class SecureRandomLive(randomRef: FiberRef[JSecureRandom]) ex
 
 object SecureRandom {
 
-  val live: Layer[NoSuchAlgorithmException, Has[SecureRandom]] = (for {
+  val live: Layer[NoSuchAlgorithmException, SecureRandom] = (for {
     // Java's SecureRandom can be a major source of lock contention.
     // Tink wraps Java's SecureRandom in a ThreadLocal to solve this problem.
     // https://github.com/google/tink/issues/72
@@ -61,8 +61,8 @@ object SecureRandom {
    * @param length the requested length of the resulting `Chunk[Byte]`.
    * @return a `Chunk[Byte]` of length `length`
    */
-  def nextBytes(length: => Int): RIO[Has[SecureRandom], Chunk[Byte]] =
-    ZIO.accessM(_.get.nextBytes(length))
+  def nextBytes(length: => Int): RIO[SecureRandom, Chunk[Byte]] =
+    ZIO.accessZIO(_.get.nextBytes(length))
 
   /**
    * Generates a base64-encoded pseudo-random string with `entropyBytes` bytes
@@ -74,8 +74,8 @@ object SecureRandom {
    *                     `String`.
    * @return a `String` with at least `entropyBytes` of entropy.
    */
-  def nextString(entropyBytes: => Int): RIO[Has[SecureRandom], String] =
-    ZIO.accessM(_.get.nextString(entropyBytes))
+  def nextString(entropyBytes: => Int): RIO[SecureRandom, String] =
+    ZIO.accessZIO(_.get.nextString(entropyBytes))
 
   /**
    * Reseeds this random object, using the eight bytes contained
@@ -88,8 +88,8 @@ object SecureRandom {
    *
    * @param seed the seed.
    */
-  def setSeed(seed: => Long): URIO[Has[SecureRandom], Unit] =
-    ZIO.accessM(_.get.setSeed(seed))
+  def setSeed(seed: => Long): URIO[SecureRandom, Unit] =
+    ZIO.accessZIO(_.get.setSeed(seed))
 
   /**
    * Provides the underlying `java.security.SecureRandom`
@@ -98,7 +98,7 @@ object SecureRandom {
    * @param fn: A function taking a `java.security.SecureRandom`
    * @return the value returned by `fn`
    */
-  def execute[A](fn: JSecureRandom => A): RIO[Has[SecureRandom], A] =
-    ZIO.accessM(_.get.execute(fn))
+  def execute[A](fn: JSecureRandom => A): RIO[SecureRandom, A] =
+    ZIO.accessZIO(_.get.execute(fn))
 
 }
