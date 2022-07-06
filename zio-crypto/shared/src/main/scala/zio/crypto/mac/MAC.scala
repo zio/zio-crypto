@@ -97,10 +97,11 @@ private object MACLive extends MAC {
 
 object MAC {
 
-  val live: TaskLayer[Has[MAC]] = Task
-    .effect(MacConfig.register())
-    .as(MACLive)
-    .toLayer
+  val live: TaskLayer[MAC] = ZLayer(
+    ZIO
+      .attempt(MacConfig.register())
+      .as(MACLive)
+  )
 
   /**
    * Computes the MAC of a message `m` with the key `k`.
@@ -109,8 +110,8 @@ object MAC {
    * @param k: the secret key to use for signing
    * @return the MAC of `m`
    */
-  def sign(m: Chunk[Byte], k: Keyset[MACAlgorithm]): RIO[Has[MAC], MACObject[Chunk[Byte]]] =
-    ZIO.access(_.get.sign(m, k))
+  def sign(m: Chunk[Byte], k: Keyset[MACAlgorithm]): RIO[MAC, MACObject[Chunk[Byte]]] =
+    ZIO.serviceWith[MAC](_.sign(m, k))
 
   /**
    * Verifies that `mac` is a valid message authentication code for `m`.
@@ -120,8 +121,8 @@ object MAC {
    * @param k: the secret key used for signing.
    * @return true if `mac` is a valid MAC for `m` under `k`, and false otherwise.
    */
-  def verify(m: Chunk[Byte], mac: MACObject[Chunk[Byte]], k: Keyset[MACAlgorithm]): RIO[Has[MAC], Boolean] =
-    ZIO.access(_.get.verify(m, mac, k))
+  def verify(m: Chunk[Byte], mac: MACObject[Chunk[Byte]], k: Keyset[MACAlgorithm]): RIO[MAC, Boolean] =
+    ZIO.serviceWith[MAC](_.verify(m, mac, k))
 
   /**
    * Computes the MAC of a message `m` with the key `k`.
@@ -131,8 +132,8 @@ object MAC {
    * @param charset: the `Charset` of `m`.
    * @return the MAC of `m`
    */
-  def sign(m: String, k: Keyset[MACAlgorithm], charset: Charset): RIO[Has[MAC], MACObject[String]] =
-    ZIO.access(_.get.sign(m, k, charset))
+  def sign(m: String, k: Keyset[MACAlgorithm], charset: Charset): RIO[MAC, MACObject[String]] =
+    ZIO.serviceWith[MAC](_.sign(m, k, charset))
 
   /**
    * Verifies that `mac` is a valid message authentication code for `m`.
@@ -148,7 +149,7 @@ object MAC {
     mac: MACObject[String],
     k: Keyset[MACAlgorithm],
     charset: Charset
-  ): RIO[Has[MAC], Boolean] =
-    ZIO.access(_.get.verify(m, mac, k, charset))
+  ): RIO[MAC, Boolean] =
+    ZIO.serviceWith[MAC](_.verify(m, mac, k, charset))
 
 }

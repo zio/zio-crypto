@@ -62,7 +62,7 @@ private object SignatureLive extends Signature {
     m: Chunk[Byte],
     privateKey: PrivateKeyset[SignatureAlgorithm]
   ): Task[SignatureObject[Chunk[Byte]]] =
-    Task.effect(
+    ZIO.attempt(
       SignatureObject(
         Chunk.fromArray(
           privateKey.handle
@@ -77,7 +77,7 @@ private object SignatureLive extends Signature {
     signature: SignatureObject[Chunk[Byte]],
     publicKey: PublicKeyset[SignatureAlgorithm]
   ): Task[Boolean] =
-    Task.effect {
+    ZIO.attempt {
       Try(
         publicKey.handle
           .getPrimitive(classOf[PublicKeyVerify])
@@ -109,16 +109,17 @@ private object SignatureLive extends Signature {
           signature = SignatureObject(signatureBytes),
           publicKey = publicKey
         )
-      case _                    => UIO(false)
+      case _                    => ZIO.succeed(false)
     }
 }
 
 object Signature {
 
-  val live: TaskLayer[Has[Signature]] = Task
-    .effect(SignatureConfig.register())
-    .as(SignatureLive)
-    .toLayer
+  val live: TaskLayer[Signature] = ZLayer {
+    ZIO
+      .attempt(SignatureConfig.register())
+      .as(SignatureLive)
+  }
 
   /**
    * Signs a message `m` with the private key `privateKey`.
@@ -130,8 +131,8 @@ object Signature {
   def sign(
     m: Chunk[Byte],
     privateKey: PrivateKeyset[SignatureAlgorithm]
-  ): RIO[Has[Signature], SignatureObject[Chunk[Byte]]] =
-    ZIO.accessM(_.get.sign(m, privateKey))
+  ): RIO[Signature, SignatureObject[Chunk[Byte]]] =
+    ZIO.environmentWithZIO(_.get.sign(m, privateKey))
 
   /**
    * Signs a message `m` with the private key `privateKey`.
@@ -145,8 +146,8 @@ object Signature {
     m: String,
     privateKey: PrivateKeyset[SignatureAlgorithm],
     charset: Charset
-  ): RIO[Has[Signature], SignatureObject[String]] =
-    ZIO.accessM(_.get.sign(m, privateKey, charset))
+  ): RIO[Signature, SignatureObject[String]] =
+    ZIO.environmentWithZIO(_.get.sign(m, privateKey, charset))
 
   /**
    * Verifies that the signature `signature` is a valid signature for `m`.
@@ -160,8 +161,8 @@ object Signature {
     m: Chunk[Byte],
     signature: SignatureObject[Chunk[Byte]],
     publicKey: PublicKeyset[SignatureAlgorithm]
-  ): RIO[Has[Signature], Boolean] =
-    ZIO.accessM(_.get.verify(m, signature, publicKey))
+  ): RIO[Signature, Boolean] =
+    ZIO.environmentWithZIO(_.get.verify(m, signature, publicKey))
 
   /**
    * Verifies that the signature `signature` is a valid signature for `m`.
@@ -177,7 +178,7 @@ object Signature {
     signature: SignatureObject[String],
     publicKey: PublicKeyset[SignatureAlgorithm],
     charset: Charset
-  ): RIO[Has[Signature], Boolean] =
-    ZIO.accessM(_.get.verify(m, signature, publicKey, charset))
+  ): RIO[Signature, Boolean] =
+    ZIO.environmentWithZIO(_.get.verify(m, signature, publicKey, charset))
 
 }
