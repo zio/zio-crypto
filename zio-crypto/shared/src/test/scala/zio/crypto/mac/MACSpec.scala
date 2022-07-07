@@ -1,10 +1,10 @@
 package zio.crypto.mac
 
+import java.nio.charset.StandardCharsets.US_ASCII
+
 import zio._
 import zio.crypto.keyset.KeysetManager
 import zio.test._
-
-import java.nio.charset.StandardCharsets.US_ASCII
 
 object MACSpec extends ZIOSpecDefault {
   private val genByteChunk: Gen[Sized, Chunk[Byte]] = Gen.chunkOf(Gen.byte)

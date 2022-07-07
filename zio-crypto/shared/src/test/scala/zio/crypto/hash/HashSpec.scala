@@ -1,11 +1,11 @@
 package zio.crypto.hash
 
+import java.nio.charset.StandardCharsets.US_ASCII
+
 import zio._
 import zio.crypto.{ Secure, unsecure }
 import zio.test.Assertion._
 import zio.test._
-
-import java.nio.charset.StandardCharsets.US_ASCII
 
 object HashSpec extends ZIOSpecDefault {
 

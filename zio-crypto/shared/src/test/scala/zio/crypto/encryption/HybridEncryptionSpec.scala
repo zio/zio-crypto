@@ -1,10 +1,10 @@
 package zio.crypto.encryption
 
+import java.nio.charset.StandardCharsets.US_ASCII
+
 import zio.Scope
 import zio.crypto.keyset.KeysetManager
 import zio.test._
-
-import java.nio.charset.StandardCharsets.US_ASCII
 
 object HybridEncryptionSpec extends ZIOSpecDefault {
 

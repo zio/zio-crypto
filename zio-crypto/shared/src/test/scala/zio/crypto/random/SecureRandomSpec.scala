@@ -2,8 +2,7 @@ package zio.crypto.random
 
 import zio.Scope
 import zio.test.Assertion._
-import zio.test._
-import zio.test.ZIOSpecDefault
+import zio.test.{ ZIOSpecDefault, _ }
 
 object SecureRandomSpec extends ZIOSpecDefault {
 
