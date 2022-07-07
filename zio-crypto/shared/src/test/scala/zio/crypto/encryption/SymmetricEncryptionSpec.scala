@@ -16,7 +16,7 @@ object SymmetricEncryptionSpec extends ZIOSpecDefault {
             key         <- KeysetManager.generateNewSymmetric(algorithm)
             ciphertext1 <- SymmetricEncryption.encrypt(m, key)
             ciphertext2 <- SymmetricEncryption.encrypt(m, key)
-          } yield assertTrue(!(ciphertext1 == ciphertext2))
+          } yield assertTrue(ciphertext1 != ciphertext2)
         }
       },
       test("decrypt(encrypt(m, k), k) == m") {
@@ -36,7 +36,7 @@ object SymmetricEncryptionSpec extends ZIOSpecDefault {
             key         <- KeysetManager.generateNewSymmetric(algorithm)
             ciphertext1 <- SymmetricEncryption.encrypt(m, key, US_ASCII)
             ciphertext2 <- SymmetricEncryption.encrypt(m, key, US_ASCII)
-          } yield assertTrue(!(ciphertext1 == ciphertext2))
+          } yield assertTrue(ciphertext1 != ciphertext2)
         }
       },
       test("decrypt(encrypt(m, k), k) == m") {

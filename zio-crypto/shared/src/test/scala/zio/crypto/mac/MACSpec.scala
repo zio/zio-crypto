@@ -25,7 +25,7 @@ object MACSpec extends ZIOSpecDefault {
           for {
             k        <- KeysetManager.generateNewSymmetric(alg)
             verified <- MAC.verify(m0, MACObject(m1), k, US_ASCII)
-          } yield assertTrue(!(verified))
+          } yield assertTrue(!verified)
         }
       },
       test("verify(m1, sign(m1, k0), k1) = false") {
@@ -35,7 +35,7 @@ object MACSpec extends ZIOSpecDefault {
             k1       <- KeysetManager.generateNewSymmetric(alg)
             mac      <- MAC.sign(m, k0, US_ASCII)
             verified <- MAC.verify(m, mac, k1, US_ASCII)
-          } yield assertTrue(!(verified))
+          } yield assertTrue(!verified)
         }
       },
       test("verify(m1, sign(m0, k), k) = false") {
@@ -45,7 +45,7 @@ object MACSpec extends ZIOSpecDefault {
               k        <- KeysetManager.generateNewSymmetric(alg)
               mac      <- MAC.sign(m1, k, US_ASCII)
               verified <- MAC.verify(m0, mac, k, US_ASCII)
-            } yield assertTrue(!(verified))
+            } yield assertTrue(!verified)
           case _                    => assertCompletesZIO
         }
       }
@@ -65,7 +65,7 @@ object MACSpec extends ZIOSpecDefault {
           for {
             k        <- KeysetManager.generateNewSymmetric(alg)
             verified <- MAC.verify(m0, MACObject(m1), k)
-          } yield assertTrue(!(verified))
+          } yield assertTrue(!verified)
         }
       },
       test("verify(m1, sign(m1, k0), k1) = false") {
@@ -75,7 +75,7 @@ object MACSpec extends ZIOSpecDefault {
             k1       <- KeysetManager.generateNewSymmetric(alg)
             mac      <- MAC.sign(m, k0)
             verified <- MAC.verify(m, mac, k1)
-          } yield assertTrue(!(verified))
+          } yield assertTrue(!verified)
         }
       },
       test("verify(m1, sign(m0, k), k) = false") {
@@ -85,7 +85,7 @@ object MACSpec extends ZIOSpecDefault {
               k        <- KeysetManager.generateNewSymmetric(alg)
               mac      <- MAC.sign(m1, k)
               verified <- MAC.verify(m0, mac, k)
-            } yield assertTrue(!(verified))
+            } yield assertTrue(!verified)
           case _                    => assertCompletesZIO
         }
       }

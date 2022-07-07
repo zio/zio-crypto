@@ -16,7 +16,7 @@ object HybridEncryptionSpec extends ZIOSpecDefault {
             key         <- KeysetManager.generateNewAsymmetric(algorithm)
             ciphertext1 <- HybridEncryption.encrypt(m, key.publicKeyset)
             ciphertext2 <- HybridEncryption.encrypt(m, key.publicKeyset)
-          } yield assertTrue(!(ciphertext1 == ciphertext2))
+          } yield assertTrue(ciphertext1 != ciphertext2)
         }
       },
       test("decrypt(encrypt(m, k), k) == m") {
@@ -36,7 +36,7 @@ object HybridEncryptionSpec extends ZIOSpecDefault {
             key         <- KeysetManager.generateNewAsymmetric(algorithm)
             ciphertext1 <- HybridEncryption.encrypt(m, key.publicKeyset, US_ASCII)
             ciphertext2 <- HybridEncryption.encrypt(m, key.publicKeyset, US_ASCII)
-          } yield assertTrue(!(ciphertext1 == ciphertext2))
+          } yield assertTrue(ciphertext1 != ciphertext2)
         }
       },
       test("decrypt(encrypt(m, k), k) == m") {

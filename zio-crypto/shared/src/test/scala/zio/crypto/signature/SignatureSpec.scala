@@ -25,7 +25,7 @@ object SignatureSpec extends ZIOSpecDefault {
               k         <- KeysetManager.generateNewAsymmetric(alg)
               signature <- Signature.sign(m0, k)
               verified  <- Signature.verify(m1, signature, k.publicKeyset)
-            } yield assertTrue(!(verified))
+            } yield assertTrue(!verified)
           case _                    => assertCompletesZIO
         }
       }
@@ -47,7 +47,7 @@ object SignatureSpec extends ZIOSpecDefault {
               k         <- KeysetManager.generateNewAsymmetric(alg)
               signature <- Signature.sign(m0, k, US_ASCII)
               verified  <- Signature.verify(m1, signature, k.publicKeyset, US_ASCII)
-            } yield assertTrue(!(verified))
+            } yield assertTrue(!verified)
           case _                    => assertCompletesZIO
         }
       }

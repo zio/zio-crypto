@@ -32,7 +32,7 @@ object HashSpec extends ZIOSpecDefault {
             for {
               digest   <- Hash.hash(m0)
               verified <- Hash.verify(m = m1, digest = digest)
-            } yield assertTrue(!(verified))
+            } yield assertTrue(!verified)
           case _                    => assertCompletesZIO
         }
       }
@@ -57,7 +57,7 @@ object HashSpec extends ZIOSpecDefault {
             for {
               digest   <- Hash.hash(m0, US_ASCII)
               verified <- Hash.verify(m = m1, digest = digest, US_ASCII)
-            } yield assertTrue(!(verified))
+            } yield assertTrue(!verified)
           case _                    => assertCompletesZIO
         }
       }
