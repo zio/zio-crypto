@@ -132,7 +132,7 @@ object Signature {
     m: Chunk[Byte],
     privateKey: PrivateKeyset[SignatureAlgorithm]
   ): RIO[Signature, SignatureObject[Chunk[Byte]]] =
-    ZIO.environmentWithZIO(_.get.sign(m, privateKey))
+    ZIO.serviceWithZIO(_.sign(m, privateKey))
 
   /**
    * Signs a message `m` with the private key `privateKey`.
@@ -147,7 +147,7 @@ object Signature {
     privateKey: PrivateKeyset[SignatureAlgorithm],
     charset: Charset
   ): RIO[Signature, SignatureObject[String]] =
-    ZIO.environmentWithZIO(_.get.sign(m, privateKey, charset))
+    ZIO.serviceWithZIO(_.sign(m, privateKey, charset))
 
   /**
    * Verifies that the signature `signature` is a valid signature for `m`.
@@ -162,7 +162,7 @@ object Signature {
     signature: SignatureObject[Chunk[Byte]],
     publicKey: PublicKeyset[SignatureAlgorithm]
   ): RIO[Signature, Boolean] =
-    ZIO.environmentWithZIO(_.get.verify(m, signature, publicKey))
+    ZIO.serviceWithZIO(_.verify(m, signature, publicKey))
 
   /**
    * Verifies that the signature `signature` is a valid signature for `m`.
@@ -179,6 +179,6 @@ object Signature {
     publicKey: PublicKeyset[SignatureAlgorithm],
     charset: Charset
   ): RIO[Signature, Boolean] =
-    ZIO.environmentWithZIO(_.get.verify(m, signature, publicKey, charset))
+    ZIO.serviceWithZIO(_.verify(m, signature, publicKey, charset))
 
 }

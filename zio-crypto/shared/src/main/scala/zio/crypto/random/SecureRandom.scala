@@ -62,7 +62,7 @@ object SecureRandom {
    * @return a `Chunk[Byte]` of length `length`
    */
   def nextBytes(length: => Int): RIO[SecureRandom, Chunk[Byte]] =
-    ZIO.environmentWithZIO(_.get.nextBytes(length))
+    ZIO.serviceWithZIO(_.nextBytes(length))
 
   /**
    * Generates a base64-encoded pseudo-random string with `entropyBytes` bytes
@@ -75,7 +75,7 @@ object SecureRandom {
    * @return a `String` with at least `entropyBytes` of entropy.
    */
   def nextString(entropyBytes: => Int): RIO[SecureRandom, String] =
-    ZIO.environmentWithZIO(_.get.nextString(entropyBytes))
+    ZIO.serviceWithZIO(_.nextString(entropyBytes))
 
   /**
    * Reseeds this random object, using the eight bytes contained
@@ -89,7 +89,7 @@ object SecureRandom {
    * @param seed the seed.
    */
   def setSeed(seed: => Long): URIO[SecureRandom, Unit] =
-    ZIO.environmentWithZIO(_.get.setSeed(seed))
+    ZIO.serviceWithZIO(_.setSeed(seed))
 
   /**
    * Provides the underlying `java.security.SecureRandom`
@@ -99,6 +99,6 @@ object SecureRandom {
    * @return the value returned by `fn`
    */
   def execute[A](fn: JSecureRandom => A): RIO[SecureRandom, A] =
-    ZIO.environmentWithZIO(_.get.execute(fn))
+    ZIO.serviceWithZIO(_.execute(fn))
 
 }

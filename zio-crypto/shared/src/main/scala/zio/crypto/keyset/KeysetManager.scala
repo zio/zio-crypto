@@ -113,7 +113,7 @@ object KeysetManager {
     secure: Secure[Keyset[Family]],
     template: KeyTemplate[Family]
   ): RIO[KeysetManager, Keyset[Family]] =
-    ZIO.environmentWithZIO(_.get.readFromFile(path))
+    ZIO.serviceWithZIO(_.readFromFile(path))
 
   def saveToFile[Family](key: Keyset[Family], path: Path)(implicit
     @implicitNotFound(
@@ -124,37 +124,37 @@ object KeysetManager {
     )
     secure: Secure[Keyset[Family]],
     template: KeyTemplate[Family]
-  ): RIO[KeysetManager, Unit] = ZIO.environmentWithZIO(_.get.saveToFile(key, path))
+  ): RIO[KeysetManager, Unit] = ZIO.serviceWithZIO(_.saveToFile(key, path))
 
   def generateNewSymmetric[Family, A <: Family](alg: A)(implicit
     t: KeyTemplate[Family] with SymmetricKeyset[Family]
   ): RIO[KeysetManager, Keyset[Family]] =
-    ZIO.environmentWithZIO(_.get.generateNewSymmetric(alg))
+    ZIO.serviceWithZIO(_.generateNewSymmetric(alg))
 
   def generateNewAsymmetric[Family, A <: Family](alg: A)(implicit
     t: KeyTemplate[Family] with AsymmetricKeyset[Family]
   ): RIO[KeysetManager, PrivateKeyset[Family]] =
-    ZIO.environmentWithZIO(_.get.generateNewAsymmetric(alg))
+    ZIO.serviceWithZIO(_.generateNewAsymmetric(alg))
 
   def add[Family, Algorithm <: Family](
     key: Keyset[Family],
     alg: Algorithm
   ): RIO[KeysetManager, Keyset[Family]] =
-    ZIO.environmentWithZIO(_.get.add(key, alg))
+    ZIO.serviceWithZIO(_.add(key, alg))
 
   def enable[Family](key: Keyset[Family], id: KeyId): RIO[KeysetManager, Keyset[Family]] =
-    ZIO.environmentWithZIO(_.get.enable(key, id))
+    ZIO.serviceWithZIO(_.enable(key, id))
 
   def disable[Family](key: Keyset[Family], id: KeyId): RIO[KeysetManager, Keyset[Family]] =
-    ZIO.environmentWithZIO(_.get.disable(key, id))
+    ZIO.serviceWithZIO(_.disable(key, id))
 
   def setPrimary[Family](key: Keyset[Family], id: KeyId): RIO[KeysetManager, Keyset[Family]] =
-    ZIO.environmentWithZIO(_.get.setPrimary(key, id))
+    ZIO.serviceWithZIO(_.setPrimary(key, id))
 
   def delete[Family](key: Keyset[Family], id: KeyId): RIO[KeysetManager, Keyset[Family]] =
-    ZIO.environmentWithZIO(_.get.delete(key, id))
+    ZIO.serviceWithZIO(_.delete(key, id))
 
   def destroy[Family](key: Keyset[Family], id: KeyId): RIO[KeysetManager, Keyset[Family]] =
-    ZIO.environmentWithZIO(_.get.destroy(key, id))
+    ZIO.serviceWithZIO(_.destroy(key, id))
 
 }

@@ -78,7 +78,7 @@ object SymmetricEncryption {
    * @return the ciphertext generated from encrypting `plainText` with `key`.
    */
   def encrypt(plainText: Chunk[Byte], key: KEY): RIO[SymmetricEncryption, CipherText[Chunk[Byte]]] =
-    ZIO.environmentWithZIO(_.get.encrypt(plainText, key))
+    ZIO.serviceWithZIO(_.encrypt(plainText, key))
 
   /**
    * Encrypts the given `plainText`.
@@ -89,7 +89,7 @@ object SymmetricEncryption {
    * @return the ciphertext generated from encrypting `plainText` with `key`.
    */
   def encrypt(plainText: String, key: KEY, charset: Charset): RIO[SymmetricEncryption, CipherText[String]] =
-    ZIO.environmentWithZIO(_.get.encrypt(plainText, key, charset))
+    ZIO.serviceWithZIO(_.encrypt(plainText, key, charset))
 
   /**
    * Decrypts the given `ciphertext`.
@@ -99,7 +99,7 @@ object SymmetricEncryption {
    * @return the plaintext decrypted from the `CipherText` `ciphertext` under the `SymmetricEncryptionKey` `key`.
    */
   def decrypt(ciphertext: CipherText[Chunk[Byte]], key: KEY): RIO[SymmetricEncryption, Chunk[Byte]] =
-    ZIO.environmentWithZIO(_.get.decrypt(ciphertext, key))
+    ZIO.serviceWithZIO(_.decrypt(ciphertext, key))
 
   /**
    * Decrypts the given `ciphertext`.
@@ -110,6 +110,6 @@ object SymmetricEncryption {
    * @return the plaintext decrypted from the `CipherText` `ciphertext` under the `SymmetricEncryptionKey` `key`.
    */
   def decrypt(ciphertext: CipherText[String], key: KEY, charset: Charset): RIO[SymmetricEncryption, String] =
-    ZIO.environmentWithZIO(_.get.decrypt(ciphertext, key, charset))
+    ZIO.serviceWithZIO(_.decrypt(ciphertext, key, charset))
 
 }

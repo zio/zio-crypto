@@ -80,7 +80,7 @@ object HybridEncryption {
    * @return the `CipherText` generated from encrypting `plainText` with `key`.
    */
   def encrypt(plainText: Chunk[Byte], key: PublicKey): RIO[HybridEncryption, CipherText[Chunk[Byte]]] =
-    ZIO.environmentWithZIO(_.get.encrypt(plainText, key))
+    ZIO.serviceWithZIO(_.encrypt(plainText, key))
 
   /**
    * Encrypts the given `plainText`.
@@ -91,7 +91,7 @@ object HybridEncryption {
    * @return the `CipherText` generated from encrypting `plainText` with `key`.
    */
   def encrypt(plainText: String, key: PublicKey, charset: Charset): RIO[HybridEncryption, CipherText[String]] =
-    ZIO.environmentWithZIO(_.get.encrypt(plainText, key, charset))
+    ZIO.serviceWithZIO(_.encrypt(plainText, key, charset))
 
   /**
    * Decrypts the given `ciphertext`.
@@ -101,7 +101,7 @@ object HybridEncryption {
    * @return the plaintext decrypted from `ciphertext` under the `key`.
    */
   def decrypt(ciphertext: CipherText[Chunk[Byte]], key: PrivateKey): RIO[HybridEncryption, Chunk[Byte]] =
-    ZIO.environmentWithZIO(_.get.decrypt(ciphertext, key))
+    ZIO.serviceWithZIO(_.decrypt(ciphertext, key))
 
   /**
    * Decrypts the given `ciphertext`.
@@ -112,6 +112,6 @@ object HybridEncryption {
    * @return the plaintext decrypted from `ciphertext` under the `key`.
    */
   def decrypt(ciphertext: CipherText[String], key: PrivateKey, charset: Charset): RIO[HybridEncryption, String] =
-    ZIO.environmentWithZIO(_.get.decrypt(ciphertext, key, charset))
+    ZIO.serviceWithZIO(_.decrypt(ciphertext, key, charset))
 
 }
