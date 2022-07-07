@@ -37,24 +37,22 @@ private final case class SecureRandomLive(randomRef: FiberRef[JSecureRandom]) ex
 
 object SecureRandom {
 
-  val live: Layer[NoSuchAlgorithmException, SecureRandom] = ZLayer {
-    ZIO.scoped {
-      for {
-        // Java's SecureRandom can be a major source of lock contention.
-        // Tink wraps Java's SecureRandom in a ThreadLocal to solve this problem.
-        // https://github.com/google/tink/issues/72
-        randomRef <- FiberRef.make[JSecureRandom](new JSecureRandom())
+  val live: Layer[NoSuchAlgorithmException, SecureRandom] = ZLayer.scoped {
+    for {
+      // Java's SecureRandom can be a major source of lock contention.
+      // Tink wraps Java's SecureRandom in a ThreadLocal to solve this problem.
+      // https://github.com/google/tink/issues/72
+      randomRef <- FiberRef.make[JSecureRandom](new JSecureRandom())
 
-        // Force seeding
-        // The returned SecureRandom object has not been seeded.
-        // To seed the returned object, call the setSeed method.
-        // If setSeed is not called, the first call to nextBytes
-        // will force the SecureRandom object to seed itself.
-        // This self-seeding will not occur if setSeed was previously called.
-        // https://docs.oracle.com/javase/8/docs/api/java/security/SecureRandom.html
-        _ <- randomRef.get.map(_.nextLong())
-      } yield SecureRandomLive(randomRef)
-    }
+      // Force seeding
+      // The returned SecureRandom object has not been seeded.
+      // To seed the returned object, call the setSeed method.
+      // If setSeed is not called, the first call to nextBytes
+      // will force the SecureRandom object to seed itself.
+      // This self-seeding will not occur if setSeed was previously called.
+      // https://docs.oracle.com/javase/8/docs/api/java/security/SecureRandom.html
+      _ <- randomRef.get.map(_.nextLong())
+    } yield SecureRandomLive(randomRef)
   }
 
   /**
