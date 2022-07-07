@@ -1,7 +1,7 @@
 package zio.crypto.hash
 
 import zio._
-import zio.crypto.{Secure, unsecure}
+import zio.crypto.{ Secure, unsecure }
 import zio.test.Assertion._
 import zio.test._
 
