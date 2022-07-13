@@ -16,7 +16,7 @@ private final case class SecureRandomLive(randomRef: FiberRef[JSecureRandom]) ex
   override def nextBytes(length: Int): Task[Chunk[Byte]] =
     length match {
       case x if x < 0 =>
-        IO.fail(new IllegalArgumentException(s"Requested $length bytes < 0 for random bytes"))
+        ZIO.fail(new IllegalArgumentException(s"Requested $length bytes < 0 for random bytes"))
       case _          =>
         randomRef.get.map { r =>
           val array = Array.ofDim[Byte](length)
@@ -37,23 +37,23 @@ private final case class SecureRandomLive(randomRef: FiberRef[JSecureRandom]) ex
 
 object SecureRandom {
 
-  val live: Layer[NoSuchAlgorithmException, Has[SecureRandom]] = (for {
-    // Java's SecureRandom can be a major source of lock contention.
-    // Tink wraps Java's SecureRandom in a ThreadLocal to solve this problem.
-    // https://github.com/google/tink/issues/72
-    randomRef <- FiberRef.make[JSecureRandom](new JSecureRandom())
+  val live: Layer[NoSuchAlgorithmException, SecureRandom] = ZLayer.scoped {
+    for {
+      // Java's SecureRandom can be a major source of lock contention.
+      // Tink wraps Java's SecureRandom in a ThreadLocal to solve this problem.
+      // https://github.com/google/tink/issues/72
+      randomRef <- FiberRef.make[JSecureRandom](new JSecureRandom())
 
-    // Force seeding
-    // The returned SecureRandom object has not been seeded.
-    // To seed the returned object, call the setSeed method.
-    // If setSeed is not called, the first call to nextBytes
-    // will force the SecureRandom object to seed itself.
-    // This self-seeding will not occur if setSeed was previously called.
-    // https://docs.oracle.com/javase/8/docs/api/java/security/SecureRandom.html
-    _ <- randomRef.get.map(_.nextLong())
-  } yield randomRef)
-    .map(SecureRandomLive)
-    .toLayer
+      // Force seeding
+      // The returned SecureRandom object has not been seeded.
+      // To seed the returned object, call the setSeed method.
+      // If setSeed is not called, the first call to nextBytes
+      // will force the SecureRandom object to seed itself.
+      // This self-seeding will not occur if setSeed was previously called.
+      // https://docs.oracle.com/javase/8/docs/api/java/security/SecureRandom.html
+      _ <- randomRef.get.map(_.nextLong())
+    } yield SecureRandomLive(randomRef)
+  }
 
   /**
    * Generates a pseudo-random Arrayuence of bytes of the specified length.
@@ -61,8 +61,8 @@ object SecureRandom {
    * @param length the requested length of the resulting `Chunk[Byte]`.
    * @return a `Chunk[Byte]` of length `length`
    */
-  def nextBytes(length: => Int): RIO[Has[SecureRandom], Chunk[Byte]] =
-    ZIO.accessM(_.get.nextBytes(length))
+  def nextBytes(length: => Int): RIO[SecureRandom, Chunk[Byte]] =
+    ZIO.serviceWithZIO(_.nextBytes(length))
 
   /**
    * Generates a base64-encoded pseudo-random string with `entropyBytes` bytes
@@ -74,8 +74,8 @@ object SecureRandom {
    *                     `String`.
    * @return a `String` with at least `entropyBytes` of entropy.
    */
-  def nextString(entropyBytes: => Int): RIO[Has[SecureRandom], String] =
-    ZIO.accessM(_.get.nextString(entropyBytes))
+  def nextString(entropyBytes: => Int): RIO[SecureRandom, String] =
+    ZIO.serviceWithZIO(_.nextString(entropyBytes))
 
   /**
    * Reseeds this random object, using the eight bytes contained
@@ -88,8 +88,8 @@ object SecureRandom {
    *
    * @param seed the seed.
    */
-  def setSeed(seed: => Long): URIO[Has[SecureRandom], Unit] =
-    ZIO.accessM(_.get.setSeed(seed))
+  def setSeed(seed: => Long): URIO[SecureRandom, Unit] =
+    ZIO.serviceWithZIO(_.setSeed(seed))
 
   /**
    * Provides the underlying `java.security.SecureRandom`
@@ -98,7 +98,7 @@ object SecureRandom {
    * @param fn: A function taking a `java.security.SecureRandom`
    * @return the value returned by `fn`
    */
-  def execute[A](fn: JSecureRandom => A): RIO[Has[SecureRandom], A] =
-    ZIO.accessM(_.get.execute(fn))
+  def execute[A](fn: JSecureRandom => A): RIO[SecureRandom, A] =
+    ZIO.serviceWithZIO(_.execute(fn))
 
 }
