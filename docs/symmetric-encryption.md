@@ -1,5 +1,5 @@
 ---
-id: symmetric_encryption
+id: symmetric-encryption
 title: "Symmetric Encryption"
 ---
 
