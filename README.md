@@ -8,14 +8,14 @@
 Fast, secure cryptographic primitives in a ZIO & ZIO Streams friendly package.
 
 # Documentation
-[zio-crypto Microsite](https://zio.github.io/zio-crypto/)
+[zio-crypto Microsite](https://zio.dev/zio-crypto/)
 
 # Contributing
-[Documentation for contributors](https://zio.github.io/zio-crypto/docs/about/about_contributing)
+[Documentation for contributors](https://zio.dev/about/contributing)
 
 ## Code of Conduct
 
-See the [Code of Conduct](https://zio.github.io/zio-crypto/docs/about/about_coc)
+See the [Code of Conduct](https://zio.dev/about/code-of-conduct)
 
 ## Support
 
