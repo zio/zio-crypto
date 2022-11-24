@@ -1,5 +1,5 @@
 ---
-id: secure_random
+id: secure-random
 title: "Secure Random"
 ---
 
