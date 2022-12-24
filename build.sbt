@@ -105,7 +105,15 @@ lazy val docs = project
     publish / skip := true,
     moduleName := "zio-crypto-docs",
     scalacOptions -= "-Yno-imports",
-    scalacOptions -= "-Xfatal-warnings"
+    scalacOptions -= "-Xfatal-warnings",
+    projectName := "ZIO Crypto",
+    badgeInfo := Some(
+      BadgeInfo(
+        artifact = "zio-crypto_2.12",
+        projectStage = ProjectStage.Experimental
+      )
+    ),
+    docsPublishBranch := "main"
   )
   .dependsOn(coreJVM, awsKMSJVM, gcpKMSJVM)
   .enablePlugins(WebsitePlugin)
