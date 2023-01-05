@@ -35,7 +35,8 @@ lazy val root = project
   .aggregate(
     coreJVM,
     gcpKMSJVM,
-    awsKMSJVM
+    awsKMSJVM,
+    docs
   )
 
 lazy val core = crossProject(JVMPlatform)
@@ -102,7 +103,6 @@ lazy val awsKMSJVM = project
 lazy val docs = project
   .in(file("zio-crypto-docs"))
   .settings(
-    publish / skip := true,
     moduleName := "zio-crypto-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
@@ -113,7 +113,8 @@ lazy val docs = project
         projectStage = ProjectStage.Experimental
       )
     ),
-    docsPublishBranch := "main"
+    docsPublishBranch := "main",
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM)
   )
   .dependsOn(coreJVM, awsKMSJVM, gcpKMSJVM)
   .enablePlugins(WebsitePlugin)
