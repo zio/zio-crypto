@@ -27,7 +27,7 @@ addCommandAlias(
 val googleCloudKMSVersion = "2.10.0"
 val tinkVersion           = "1.6.1"
 val zioVersion            = "2.0.0"
-val awsKMSVersion         = "1.12.379"
+val awsKMSVersion         = "1.12.380"
 
 lazy val root = project
   .in(file("."))
