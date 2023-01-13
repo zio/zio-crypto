@@ -6,7 +6,7 @@
 
 Fast, secure cryptographic primitives in a ZIO & ZIO Streams friendly package. ZIO Crypto is a ZIO-idiomatic wrapper over Java's basic cryptographic functions. It provides hashing, secure random generation, and HMAC signatures and verifications.
 
-[![Experimental](https://img.shields.io/badge/Project%20Stage-Experimental-yellowgreen.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-crypto/workflows/CI/badge.svg) [![Sonatype Releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-crypto_2.12.svg?label=Sonatype%20Release)](https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-crypto_2.12/) [![Sonatype Snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-crypto_2.12.svg?label=Sonatype%20Snapshot)](https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-crypto_2.12/) [![ZIO Crypto](https://img.shields.io/github/stars/zio/zio-crypto?style=social)](https://github.com/zio/zio-crypto)
+[![Experimental](https://img.shields.io/badge/Project%20Stage-Experimental-yellowgreen.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-crypto/workflows/CI/badge.svg) [![Sonatype Snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-crypto_2.13.svg?label=Sonatype%20Snapshot)](https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-crypto_2.13/) [![ZIO Crypto](https://img.shields.io/github/stars/zio/zio-crypto?style=social)](https://github.com/zio/zio-crypto)
 
 ## Project Goals
 

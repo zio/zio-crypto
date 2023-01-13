@@ -12,13 +12,13 @@ name: Website
     - main
   pull_request: {}
 jobs:
-  check-workflow:
-    name: Check Workflow
+  build:
+    name: Build and Test
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' }}
     steps:
     - name: Git Checkout
-      uses: actions/checkout@v3.2.0
+      uses: actions/checkout@v3.3.0
       with:
         fetch-depth: '0'
     - name: Setup Scala
@@ -27,17 +27,21 @@ jobs:
         distribution: temurin
         java-version: 17
         check-latest: true
-    - name: Check that site workflow is up to date
+    - name: Check if the README file is up to date
+      run: sbt  docs/checkReadme
+    - name: Check if the site workflow is up to date
       run: sbt  docs/checkGithubWorkflow
+    - name: Check artifacts build process
+      run: sbt  +publishLocal
     - name: Check website build process
-      run: sbt  docs/buildWebsite
+      run: sbt docs/clean; sbt  docs/buildWebsite
   publish-docs:
     name: Publish Docs
     runs-on: ubuntu-latest
     if: ${{ ((github.event_name == 'release') && (github.event.action == 'published')) || (github.event_name == 'workflow_dispatch') }}
     steps:
     - name: Git Checkout
-      uses: actions/checkout@v3.2.0
+      uses: actions/checkout@v3.3.0
       with:
         fetch-depth: '0'
     - name: Setup Scala
@@ -58,10 +62,10 @@ jobs:
   generate-readme:
     name: Generate README
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'push') || ((github.event_name == 'release') && (github.event_name == 'published')) }}
     steps:
     - name: Git Checkout
-      uses: actions/checkout@v3.2.0
+      uses: actions/checkout@v3.3.0
       with:
         ref: ${{ github.head_ref }}
         fetch-depth: '0'
