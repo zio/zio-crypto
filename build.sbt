@@ -107,12 +107,8 @@ lazy val docs = project
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
     projectName := "ZIO Crypto",
-    badgeInfo := Some(
-      BadgeInfo(
-        artifact = "zio-crypto_2.12",
-        projectStage = ProjectStage.Experimental
-      )
-    ),
+    mainModuleName := (coreJVM / moduleName).value,
+    projectStage := ProjectStage.Experimental,
     docsPublishBranch := "main",
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM)
   )
