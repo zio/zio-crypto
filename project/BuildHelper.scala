@@ -94,7 +94,7 @@ object BuildHelper {
   )
 
   val scalaReflectSettings = Seq(
-    libraryDependencies ++= Seq("dev.zio" %%% "izumi-reflect" % "2.2.3")
+    libraryDependencies ++= Seq("dev.zio" %%% "izumi-reflect" % "2.2.4")
   )
 
   // Keep this consistent with the version in .core-tests/shared/src/test/scala/REPLSpec.scala
