@@ -24,10 +24,10 @@ addCommandAlias(
   ";coreJVM/test"
 )
 
-val googleCloudKMSVersion = "2.11.0"
+val googleCloudKMSVersion = "2.12.0"
 val tinkVersion           = "1.7.0"
 val zioVersion            = "2.0.0"
-val awsKMSVersion         = "1.12.384"
+val awsKMSVersion         = "1.12.395"
 
 lazy val root = project
   .in(file("."))
