@@ -28,11 +28,6 @@ addCommandAlias(
   ";coreJVM/test"
 )
 
-val googleCloudKMSVersion = "2.12.0"
-val tinkVersion           = "1.7.0"
-val zioVersion            = "2.0.0"
-val awsKMSVersion         = "1.12.395"
-
 lazy val root = project
   .in(file("."))
   .settings(publish / skip := true)
@@ -52,9 +47,9 @@ lazy val core = crossProject(JVMPlatform)
   .settings(
     scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"      % zioVersion,
-      "dev.zio"              %%% "zio-test" % zioVersion % "test",
-      "com.google.crypto.tink" % "tink"     % tinkVersion
+      "dev.zio"              %%% "zio"      % ZIOVersion,
+      "dev.zio"              %%% "zio-test" % ZIOVersion % "test",
+      "com.google.crypto.tink" % "tink"     % TinkVersion
     )
   )
   .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
@@ -62,7 +57,7 @@ lazy val core = crossProject(JVMPlatform)
 
 lazy val coreJVM = core.jvm
   .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % ZIOVersion % Test)
   .settings(scalaReflectTestSettings)
 
 lazy val gcpKMSJVM = project
@@ -73,17 +68,17 @@ lazy val gcpKMSJVM = project
   .settings(
     scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"              % zioVersion,
-      "dev.zio"              %%% "zio-test"         % zioVersion % "test",
-      "com.google.crypto.tink" % "tink-gcpkms"      % tinkVersion,
-      "com.google.cloud"       % "google-cloud-kms" % googleCloudKMSVersion
+      "dev.zio"              %%% "zio"              % ZIOVersion,
+      "dev.zio"              %%% "zio-test"         % ZIOVersion % "test",
+      "com.google.crypto.tink" % "tink-gcpkms"      % TinkVersion,
+      "com.google.cloud"       % "google-cloud-kms" % GoogleCloudKMSVersion
     )
   )
   .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
   .dependsOn(coreJVM)
   .enablePlugins(BuildInfoPlugin)
   .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % ZIOVersion % Test)
   .settings(scalaReflectTestSettings)
 
 lazy val awsKMSJVM = project
@@ -94,17 +89,17 @@ lazy val awsKMSJVM = project
   .settings(
     scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"              % zioVersion,
-      "dev.zio"              %%% "zio-test"         % zioVersion % "test",
-      "com.google.crypto.tink" % "tink-awskms"      % tinkVersion,
-      "com.amazonaws"          % "aws-java-sdk-kms" % awsKMSVersion
+      "dev.zio"              %%% "zio"              % ZIOVersion,
+      "dev.zio"              %%% "zio-test"         % ZIOVersion % "test",
+      "com.google.crypto.tink" % "tink-awskms"      % TinkVersion,
+      "com.amazonaws"          % "aws-java-sdk-kms" % AWSKMSVersion
     )
   )
   .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
   .dependsOn(coreJVM)
   .enablePlugins(BuildInfoPlugin)
   .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % ZIOVersion % Test)
   .settings(scalaReflectTestSettings)
 
 lazy val docs = project

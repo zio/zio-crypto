@@ -4,7 +4,10 @@ object V {
   val Scala213 = "2.13.8"
   val Scala3   = "3.2.1"
 
-  val zioVersion = "2.0.6"
-
   val SilencerVersion = "1.7.12"
+
+  val GoogleCloudKMSVersion = "2.12.0"
+  val TinkVersion           = "1.7.0"
+  val ZIOVersion            = "2.0.0"
+  val AWSKMSVersion         = "1.12.395"
 }
