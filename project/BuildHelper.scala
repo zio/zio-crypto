@@ -70,45 +70,6 @@ object BuildHelper {
     libraryDependencies ++= Seq("dev.zio" %%% "izumi-reflect" % "2.2.4")
   )
 
-  // Keep this consistent with the version in .core-tests/shared/src/test/scala/REPLSpec.scala
-  val replSettings = makeReplSettings {
-    """|import zio._
-       |import zio.console._
-       |import zio.duration._
-       |import zio.Runtime.default._
-       |implicit class RunSyntax[A](io: ZIO[ZEnv, Any, A]){ def unsafeRun: A = Runtime.default.unsafeRun(io.provideLayer(ZEnv.live)) }
-    """.stripMargin
-  }
-
-  // Keep this consistent with the version in .streams-tests/shared/src/test/scala/StreamREPLSpec.scala
-  val streamReplSettings = makeReplSettings {
-    """|import zio._
-       |import zio.console._
-       |import zio.duration._
-       |import zio.stream._
-       |import zio.Runtime.default._
-       |implicit class RunSyntax[A](io: ZIO[ZEnv, Any, A]){ def unsafeRun: A = Runtime.default.unsafeRun(io.provideLayer(ZEnv.live)) }
-    """.stripMargin
-  }
-
-  def makeReplSettings(initialCommandsStr: String) = Seq(
-    // In the repl most warnings are useless or worse.
-    // This is intentionally := as it's more direct to enumerate the few
-    // options we do want than to try to subtract off the ones we don't.
-    // One of -Ydelambdafy:inline or -Yrepl-class-based must be given to
-    // avoid deadlocking on parallel operations, see
-    //   https://issues.scala-lang.org/browse/SI-9076
-    Compile / console / scalacOptions := Seq(
-      "-Ypartial-unification",
-      "-language:higherKinds",
-      "-language:existentials",
-      "-Yno-adapted-args",
-      "-Xsource:2.13",
-      "-Yrepl-class-based"
-    ),
-    Compile / console / initialCommands := initialCommandsStr
-  )
-
   def extraOptions(scalaVersion: String, optimize: Boolean) =
     CrossVersion.partialVersion(scalaVersion) match {
       case Some((3, 0))  =>
@@ -198,10 +159,7 @@ object BuildHelper {
     }
   )
 
-  def stdSettings(prjName: String) = Seq(
-    name := s"$prjName",
-    crossScalaVersions := Seq(Scala211, Scala212, Scala213),
-    ThisBuild / scalaVersion := Scala213,
+  def stdSettings = Seq(
     scalacOptions ++= stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
     libraryDependencies ++= {
       if (scalaVersion.value == Scala3)
@@ -304,7 +262,4 @@ object BuildHelper {
       """.stripMargin
   }
 
-  implicit class ModuleHelper(p: Project) {
-    def module: Project = p.in(file(p.id)).settings(stdSettings(p.id))
-  }
 }

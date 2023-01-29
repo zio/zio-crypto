@@ -40,11 +40,14 @@ lazy val root = project
 
 lazy val core = crossProject(JVMPlatform)
   .in(file("zio-crypto"))
-  .settings(stdSettings("zio-crypto"))
+  .settings(stdSettings)
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.crypto"))
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
+    name := "zio-crypto",
+    crossScalaVersions := Seq(Scala211, Scala212, Scala213),
+    ThisBuild / scalaVersion := Scala213,
     scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
       "dev.zio"              %%% "zio"      % ZIOVersion,
@@ -62,10 +65,11 @@ lazy val coreJVM = core.jvm
 
 lazy val gcpKMSJVM = project
   .in(file("zio-crypto-gcpkms"))
-  .settings(stdSettings("zio-crypto-gcpkms"))
+  .settings(stdSettings)
   .settings(buildInfoSettings("zio.crypto.gcpkms"))
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
+    name := "zio-crypto-gcpkms",
     scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
       "dev.zio"              %%% "zio"              % ZIOVersion,
@@ -83,10 +87,11 @@ lazy val gcpKMSJVM = project
 
 lazy val awsKMSJVM = project
   .in(file("zio-crypto-awskms"))
-  .settings(stdSettings("zio-crypto-awskms"))
+  .settings(stdSettings)
   .settings(buildInfoSettings("zio.crypto.awskms"))
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
+    name := "zio-crypto-awskms",
     scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
       "dev.zio"              %%% "zio"              % ZIOVersion,
