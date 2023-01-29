@@ -1,11 +1,33 @@
 import explicitdeps.ExplicitDepsPlugin.autoImport._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.Keys._
-import sbt.{ Console => _, _ }
+import sbt._
+import sbtbuildinfo.BuildInfoKeys._
+import sbtbuildinfo._
 import sbtcrossproject.CrossPlugin.autoImport._
 import scalafix.sbt.ScalafixPlugin.autoImport._
 
+import scala.scalanative.nir.Op.Load
+
 object BuildHelper {
+  private val versions: Map[String, String] = {
+    import org.snakeyaml.engine.v2.api.{ Load, LoadSettings }
+
+    import java.util.{ List => JList, Map => JMap }
+    import scala.jdk.CollectionConverters._
+
+    val doc  = new Load(LoadSettings.builder().build())
+      .loadFromReader(scala.io.Source.fromFile(".github/workflows/ci.yml").bufferedReader())
+    val yaml = doc.asInstanceOf[JMap[String, JMap[String, JMap[String, JMap[String, JMap[String, JList[String]]]]]]]
+    val list = yaml.get("jobs").get("test").get("strategy").get("matrix").get("scala").asScala
+    list.map(v => (v.split('.').take(2).mkString("."), v)).toMap
+  }
+  val Scala211: String   = versions("2.11")
+  val Scala212: String   = versions("2.12")
+  val Scala213: String   = versions("2.13")
+  val ScalaDotty: String = versions("3.1")
+
+  val SilencerVersion = "1.7.12"
 
   private val stdOptions = Seq(
     "-deprecation",
@@ -39,17 +61,23 @@ object BuildHelper {
       )
     else Nil
 
+  def buildInfoSettings(packageName: String) =
+    Seq(
+      buildInfoKeys := Seq[BuildInfoKey](organization, moduleName, name, version, scalaVersion, sbtVersion, isSnapshot),
+      buildInfoPackage := packageName
+    )
+
   val dottySettings = Seq(
-    crossScalaVersions += V.Scala3,
+    crossScalaVersions += ScalaDotty,
     scalacOptions --= {
-      if (scalaVersion.value == V.Scala3)
+      if (scalaVersion.value == ScalaDotty)
         Seq("-Xfatal-warnings")
       else
         Seq()
     },
     Compile / doc / sources := {
       val old = (Compile / doc / sources).value
-      if (scalaVersion.value == V.Scala3) {
+      if (scalaVersion.value == ScalaDotty) {
         Nil
       } else {
         old
@@ -57,7 +85,7 @@ object BuildHelper {
     },
     Test / parallelExecution := {
       val old = (Test / parallelExecution).value
-      if (scalaVersion.value == V.Scala3) {
+      if (scalaVersion.value == ScalaDotty) {
         false
       } else {
         old
@@ -199,22 +227,22 @@ object BuildHelper {
 
   def stdSettings(prjName: String) = Seq(
     name := s"$prjName",
-    crossScalaVersions := Seq(V.Scala211, V.Scala212, V.Scala213),
-    ThisBuild / scalaVersion := V.Scala213,
+    crossScalaVersions := Seq(Scala211, Scala212, Scala213),
+    ThisBuild / scalaVersion := Scala213,
     scalacOptions ++= stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
     libraryDependencies ++= {
-      if (scalaVersion.value == V.Scala3)
+      if (scalaVersion.value == ScalaDotty)
         Seq(
-          "com.github.ghik" % s"silencer-lib_${V.Scala213}" % V.SilencerVersion % Provided
+          "com.github.ghik" % s"silencer-lib_$Scala213" % SilencerVersion % Provided
         )
       else
         Seq(
-          "com.github.ghik" % "silencer-lib"                % V.SilencerVersion % Provided cross CrossVersion.full,
-          compilerPlugin("com.github.ghik" % "silencer-plugin" % V.SilencerVersion cross CrossVersion.full),
+          "com.github.ghik" % "silencer-lib"            % SilencerVersion % Provided cross CrossVersion.full,
+          compilerPlugin("com.github.ghik" % "silencer-plugin" % SilencerVersion cross CrossVersion.full),
           compilerPlugin("org.typelevel"  %% "kind-projector"  % "0.13.2" cross CrossVersion.full)
         )
     },
-    semanticdbEnabled := scalaVersion.value != V.Scala3, // enable SemanticDB
+    semanticdbEnabled := scalaVersion.value != ScalaDotty, // enable SemanticDB
     semanticdbOptions += "-P:semanticdb:synthetics:on",
     semanticdbVersion := scalafixSemanticdb.revision, // use Scalafix compatible version
     ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
@@ -247,7 +275,7 @@ object BuildHelper {
   def macroDefinitionSettings = Seq(
     scalacOptions += "-language:experimental.macros",
     libraryDependencies ++= {
-      if (scalaVersion.value == V.Scala3) Seq()
+      if (scalaVersion.value == ScalaDotty) Seq()
       else
         Seq(
           "org.scala-lang" % "scala-reflect"  % scalaVersion.value % "provided",
@@ -269,12 +297,40 @@ object BuildHelper {
 
   val scalaReflectTestSettings: List[Setting[_]] = List(
     libraryDependencies ++= {
-      if (scalaVersion.value == V.Scala3)
-        Seq("org.scala-lang" % "scala-reflect" % V.Scala3           % Test)
+      if (scalaVersion.value == ScalaDotty)
+        Seq("org.scala-lang" % "scala-reflect" % Scala213           % Test)
       else
         Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % Test)
     }
   )
+
+  def welcomeMessage = onLoadMessage := {
+    import scala.Console
+
+    def header(text: String): String = s"${Console.RED}$text${Console.RESET}"
+
+    def item(text: String): String    = s"${Console.GREEN}> ${Console.CYAN}$text${Console.RESET}"
+    def subItem(text: String): String = s"  ${Console.YELLOW}> ${Console.CYAN}$text${Console.RESET}"
+
+    s"""|${header(" ________ ___")}
+        |${header("|__  /_ _/ _ \\")}
+        |${header("  / / | | | | |")}
+        |${header(" / /_ | | |_| |")}
+        |${header(s"/____|___\\___/   ${version.value}")}
+        |
+        |Useful sbt tasks:
+        |${item("build")} - Prepares sources, compiles and runs tests.
+        |${item("prepare")} - Prepares sources by applying both scalafix and scalafmt
+        |${item("fix")} - Fixes sources files using scalafix
+        |${item("fmt")} - Formats source files using scalafmt
+        |${item("~compileJVM")} - Compiles all JVM modules (file-watch enabled)
+        |${item("testJVM")} - Runs all JVM tests
+        |${item("testJS")} - Runs all ScalaJS tests
+        |${item("testOnly *.YourSpec -- -t \"YourLabel\"")} - Only runs tests with matching term e.g.
+        |${subItem("coreTestsJVM/testOnly *.ZIOSpec -- -t \"happy-path\"")}
+        |${item("docs/docusaurusCreateSite")} - Generates the ZIO microsite
+      """.stripMargin
+  }
 
   implicit class ModuleHelper(p: Project) {
     def module: Project = p.in(file(p.id)).settings(stdSettings(p.id))

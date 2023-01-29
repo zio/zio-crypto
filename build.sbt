@@ -1,11 +1,10 @@
 import BuildHelper._
 
-//enablePlugins(EcosystemPlugin)
-
 inThisBuild(
   List(
     organization := "dev.zio",
     homepage := Some(url("https://zio.dev/zio-crypto/")),
+    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers := List(
       Developer(
         "jdegoes",
@@ -16,6 +15,19 @@ inThisBuild(
     )
   )
 )
+
+addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
+addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check")
+
+addCommandAlias(
+  "testJVM",
+  ";coreJVM/test"
+)
+
+val googleCloudKMSVersion = "2.12.0"
+val tinkVersion           = "1.7.0"
+val zioVersion            = "2.0.0"
+val awsKMSVersion         = "1.12.395"
 
 lazy val root = project
   .in(file("."))
@@ -35,9 +47,9 @@ lazy val core = crossProject(JVMPlatform)
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"      % V.zioVersion,
-      "dev.zio"              %%% "zio-test" % V.zioVersion % "test",
-      "com.google.crypto.tink" % "tink"     % V.tinkVersion
+      "dev.zio"              %%% "zio"      % zioVersion,
+      "dev.zio"              %%% "zio-test" % zioVersion % "test",
+      "com.google.crypto.tink" % "tink"     % tinkVersion
     )
   )
   .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
@@ -45,7 +57,7 @@ lazy val core = crossProject(JVMPlatform)
 
 lazy val coreJVM = core.jvm
   .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % V.zioVersion % Test)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
   .settings(scalaReflectTestSettings)
 
 lazy val gcpKMSJVM = project
@@ -55,20 +67,17 @@ lazy val gcpKMSJVM = project
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"              % V.zioVersion,
-      "dev.zio"              %%% "zio-test"         % V.zioVersion % "test",
-      "com.google.crypto.tink" % "tink-gcpkms"      % V.tinkVersion,
-      "com.google.cloud"       % "google-cloud-kms" % V.googleCloudKMSVersion
+      "dev.zio"              %%% "zio"              % zioVersion,
+      "dev.zio"              %%% "zio-test"         % zioVersion % "test",
+      "com.google.crypto.tink" % "tink-gcpkms"      % tinkVersion,
+      "com.google.cloud"       % "google-cloud-kms" % googleCloudKMSVersion
     )
   )
   .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
   .dependsOn(coreJVM)
-  .enablePlugins(
-    BuildInfoPlugin
-//    EcosystemPlugin
-  )
+  .enablePlugins(BuildInfoPlugin)
   .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % V.zioVersion % Test)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
   .settings(scalaReflectTestSettings)
 
 lazy val awsKMSJVM = project
@@ -78,20 +87,17 @@ lazy val awsKMSJVM = project
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"              % V.zioVersion,
-      "dev.zio"              %%% "zio-test"         % V.zioVersion % "test",
-      "com.google.crypto.tink" % "tink-awskms"      % V.tinkVersion,
-      "com.amazonaws"          % "aws-java-sdk-kms" % V.awsKMSVersion
+      "dev.zio"              %%% "zio"              % zioVersion,
+      "dev.zio"              %%% "zio-test"         % zioVersion % "test",
+      "com.google.crypto.tink" % "tink-awskms"      % tinkVersion,
+      "com.amazonaws"          % "aws-java-sdk-kms" % awsKMSVersion
     )
   )
   .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
   .dependsOn(coreJVM)
-  .enablePlugins(
-    BuildInfoPlugin
-//    EcosystemPlugin
-  )
+  .enablePlugins(BuildInfoPlugin)
   .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % V.zioVersion % Test)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
   .settings(scalaReflectTestSettings)
 
 lazy val docs = project
@@ -107,7 +113,4 @@ lazy val docs = project
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM)
   )
   .dependsOn(coreJVM, awsKMSJVM, gcpKMSJVM)
-  .enablePlugins(
-    WebsitePlugin,
-//    EcosystemPlugin
-  )
+  .enablePlugins(WebsitePlugin)
