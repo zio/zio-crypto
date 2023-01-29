@@ -1,7 +1,11 @@
 import BuildHelper._
+import V._
+
+//enablePlugins(EcosystemPlugin)
 
 inThisBuild(
   List(
+    scalaVersion := V.Scala213,
     organization := "dev.zio",
     homepage := Some(url("https://zio.dev/zio-crypto/")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
@@ -46,6 +50,7 @@ lazy val core = crossProject(JVMPlatform)
   .settings(buildInfoSettings("zio.crypto"))
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
+    scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
       "dev.zio"              %%% "zio"      % zioVersion,
       "dev.zio"              %%% "zio-test" % zioVersion % "test",
@@ -66,6 +71,7 @@ lazy val gcpKMSJVM = project
   .settings(buildInfoSettings("zio.crypto.gcpkms"))
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
+    scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
       "dev.zio"              %%% "zio"              % zioVersion,
       "dev.zio"              %%% "zio-test"         % zioVersion % "test",
@@ -86,6 +92,7 @@ lazy val awsKMSJVM = project
   .settings(buildInfoSettings("zio.crypto.awskms"))
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
   .settings(
+    scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
       "dev.zio"              %%% "zio"              % zioVersion,
       "dev.zio"              %%% "zio-test"         % zioVersion % "test",
@@ -103,6 +110,7 @@ lazy val awsKMSJVM = project
 lazy val docs = project
   .in(file("zio-crypto-docs"))
   .settings(
+    scalaVersion := V.Scala213,
     moduleName := "zio-crypto-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
