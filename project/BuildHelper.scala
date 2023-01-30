@@ -5,10 +5,6 @@ import sbt.{ Console => _, _ }
 object BuildHelper {
   import V._
 
-  val scalaReflectSettings = Seq(
-    libraryDependencies ++= Seq("dev.zio" %%% "izumi-reflect" % "2.2.4")
-  )
-
   val scalaReflectTestSettings: List[Setting[_]] = List(
     libraryDependencies ++= {
       if (scalaVersion.value == Scala3)
