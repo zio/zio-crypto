@@ -217,17 +217,6 @@ object BuildHelper {
     }
   )
 
-  def jsSettings = Seq(
-    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time"      % "2.5.0",
-    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time-tzdb" % "2.5.0"
-  )
-
-  def nativeSettings = Seq(
-    Test / test := (Test / compile).value,
-    doc / skip := true,
-    Compile / doc / sources := Seq.empty
-  )
-
   val scalaReflectTestSettings: List[Setting[_]] = List(
     libraryDependencies ++= {
       if (scalaVersion.value == Scala3)
