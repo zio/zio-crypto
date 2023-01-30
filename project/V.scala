@@ -10,4 +10,6 @@ object V {
   val TinkVersion           = "1.7.0"
   val ZIOVersion            = "2.0.0"
   val AWSKMSVersion         = "1.12.395"
+  val IzumiReflectVersion = "2.1.0"
+  val ZIOStacktracerVersion = "2.0.0"
 }

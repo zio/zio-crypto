@@ -50,7 +50,9 @@ lazy val core = crossProject(JVMPlatform)
     ThisBuild / scalaVersion := Scala213,
     scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
-      "com.google.crypto.tink" % "tink" % TinkVersion
+      "com.google.crypto.tink" % "tink"            % TinkVersion,
+      "dev.zio"               %% "izumi-reflect"   % IzumiReflectVersion,
+      "dev.zio"               %% "zio-stacktracer" % ZIOStacktracerVersion
     )
   )
   .enablePlugins(BuildInfoPlugin)
@@ -84,11 +86,7 @@ lazy val awsKMSJVM = project
   .settings(enableZIO(ZIOVersion))
   .settings(
     name := "zio-crypto-awskms",
-    scalaVersion := V.Scala213,
-    libraryDependencies ++= Seq(
-      "com.google.crypto.tink" % "tink-awskms"      % TinkVersion,
-      "com.amazonaws"          % "aws-java-sdk-kms" % AWSKMSVersion
-    )
+    scalaVersion := V.Scala213
   )
   .dependsOn(coreJVM)
   .enablePlugins(BuildInfoPlugin)
