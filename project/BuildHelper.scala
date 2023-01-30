@@ -217,18 +217,6 @@ object BuildHelper {
     }
   )
 
-  def macroDefinitionSettings = Seq(
-    scalacOptions += "-language:experimental.macros",
-    libraryDependencies ++= {
-      if (scalaVersion.value == Scala3) Seq()
-      else
-        Seq(
-          "org.scala-lang" % "scala-reflect"  % scalaVersion.value % "provided",
-          "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
-        )
-    }
-  )
-
   def jsSettings = Seq(
     libraryDependencies += "io.github.cquiroz" %%% "scala-java-time"      % "2.5.0",
     libraryDependencies += "io.github.cquiroz" %%% "scala-java-time-tzdb" % "2.5.0"
