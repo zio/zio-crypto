@@ -1,4 +1,3 @@
-import BuildHelper._
 import V._
 
 //enablePlugins(EcosystemPlugin)
@@ -58,7 +57,6 @@ lazy val core = crossProject(JVMPlatform)
 
 lazy val coreJVM = core.jvm
   .settings(dottySettings(Scala3))
-  .settings(scalaReflectTestSettings)
 
 lazy val gcpKMSJVM = project
   .in(file("zio-crypto-gcpkms"))
@@ -77,7 +75,6 @@ lazy val gcpKMSJVM = project
   .dependsOn(coreJVM)
   .enablePlugins(BuildInfoPlugin)
   .settings(dottySettings(Scala3))
-  .settings(scalaReflectTestSettings)
 
 lazy val awsKMSJVM = project
   .in(file("zio-crypto-awskms"))
@@ -96,7 +93,6 @@ lazy val awsKMSJVM = project
   .dependsOn(coreJVM)
   .enablePlugins(BuildInfoPlugin)
   .settings(dottySettings(Scala3))
-  .settings(scalaReflectTestSettings)
 
 lazy val docs = project
   .in(file("zio-crypto-docs"))
