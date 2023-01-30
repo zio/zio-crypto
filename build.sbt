@@ -40,71 +40,62 @@ lazy val root = project
 
 lazy val core = crossProject(JVMPlatform)
   .in(file("zio-crypto"))
-  .settings(stdSettings)
+  .settings(stdSettings(Scala3, Scala213))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.crypto"))
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
+  .settings(enableZIO(ZIOVersion))
   .settings(
     name := "zio-crypto",
     crossScalaVersions := Seq(Scala211, Scala212, Scala213),
     ThisBuild / scalaVersion := Scala213,
     scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"      % ZIOVersion,
-      "dev.zio"              %%% "zio-test" % ZIOVersion % "test",
-      "com.google.crypto.tink" % "tink"     % TinkVersion
+      "com.google.crypto.tink" % "tink" % TinkVersion
     )
   )
-  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
   .enablePlugins(BuildInfoPlugin)
 
 lazy val coreJVM = core.jvm
-  .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % ZIOVersion % Test)
+  .settings(dottySettings(Scala3))
   .settings(scalaReflectTestSettings)
 
 lazy val gcpKMSJVM = project
   .in(file("zio-crypto-gcpkms"))
-  .settings(stdSettings)
+  .settings(stdSettings(Scala3, Scala213))
   .settings(buildInfoSettings("zio.crypto.gcpkms"))
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
+  .settings(enableZIO(ZIOVersion))
   .settings(
     name := "zio-crypto-gcpkms",
     scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"              % ZIOVersion,
-      "dev.zio"              %%% "zio-test"         % ZIOVersion % "test",
       "com.google.crypto.tink" % "tink-gcpkms"      % TinkVersion,
       "com.google.cloud"       % "google-cloud-kms" % GoogleCloudKMSVersion
     )
   )
-  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
   .dependsOn(coreJVM)
   .enablePlugins(BuildInfoPlugin)
-  .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % ZIOVersion % Test)
+  .settings(dottySettings(Scala3))
   .settings(scalaReflectTestSettings)
 
 lazy val awsKMSJVM = project
   .in(file("zio-crypto-awskms"))
-  .settings(stdSettings)
+  .settings(stdSettings(Scala3, Scala213))
   .settings(buildInfoSettings("zio.crypto.awskms"))
   .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
+  .settings(enableZIO(ZIOVersion))
   .settings(
     name := "zio-crypto-awskms",
     scalaVersion := V.Scala213,
     libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"              % ZIOVersion,
-      "dev.zio"              %%% "zio-test"         % ZIOVersion % "test",
       "com.google.crypto.tink" % "tink-awskms"      % TinkVersion,
       "com.amazonaws"          % "aws-java-sdk-kms" % AWSKMSVersion
     )
   )
-  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
   .dependsOn(coreJVM)
   .enablePlugins(BuildInfoPlugin)
-  .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % ZIOVersion % Test)
+  .settings(dottySettings(Scala3))
   .settings(scalaReflectTestSettings)
 
 lazy val docs = project
