@@ -2,11 +2,25 @@ import explicitdeps.ExplicitDepsPlugin.autoImport._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.Keys._
 import sbt.{ Console => _, _ }
+import sbtbuildinfo.BuildInfoKey
+import sbtbuildinfo.BuildInfoKeys.{ buildInfoKeys, buildInfoPackage }
 import sbtcrossproject.CrossPlugin.autoImport._
 import scalafix.sbt.ScalafixPlugin.autoImport._
 
 object BuildHelper {
   import V._
+
+  def buildInfoSettings(packageName: String): Seq[Setting[_ <: Object]] =
+    Seq(
+      buildInfoKeys := Seq[BuildInfoKey](
+        name,
+        version,
+        scalaVersion,
+        sbtVersion,
+        isSnapshot
+      ),
+      buildInfoPackage := packageName
+    )
 
   private val stdOptions = Seq(
     "-deprecation",
