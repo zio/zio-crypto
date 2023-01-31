@@ -1,4 +1,5 @@
 import V._
+import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 //enablePlugins(EcosystemPlugin)
 
@@ -39,7 +40,7 @@ lazy val root = project
 
 lazy val core = crossProject(JVMPlatform)
   .in(file("zio-crypto"))
-  .settings(stdSettings(Scala3, Scala213))
+  .settings(stdSettings(Scala3, enableSilencer = true))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.crypto"))
   .settings(enableZIO(ZIOVersion))
@@ -57,40 +58,35 @@ lazy val core = crossProject(JVMPlatform)
   .enablePlugins(BuildInfoPlugin)
 
 lazy val coreJVM = core.jvm
-  .settings(dottySettings(Scala3))
+  .settings(dottySettings(Scala3, Scala213))
 
 lazy val gcpKMSJVM = project
   .in(file("zio-crypto-gcpkms"))
-  .settings(stdSettings(Scala3, Scala213))
+  .settings(stdSettings(Scala3))
   .settings(buildInfoSettings("zio.crypto.gcpkms"))
-  .settings(enableZIO(ZIOVersion))
   .settings(
     name := "zio-crypto-gcpkms",
-    scalaVersion := V.Scala213,
-    libraryDependencies ++= Seq(
-      "com.google.crypto.tink" % "tink-gcpkms"      % TinkVersion,
-      "com.google.cloud"       % "google-cloud-kms" % GoogleCloudKMSVersion
-    )
+    scalaVersion := V.Scala213
   )
   .dependsOn(coreJVM)
+  .settings(dottySettings(Scala3, Scala213))
   .enablePlugins(BuildInfoPlugin)
-  .settings(dottySettings(Scala3))
 
 lazy val awsKMSJVM = project
   .in(file("zio-crypto-awskms"))
-  .settings(stdSettings(Scala3, Scala213))
+  .settings(stdSettings(Scala3))
   .settings(buildInfoSettings("zio.crypto.awskms"))
-  .settings(enableZIO(ZIOVersion))
   .settings(
     name := "zio-crypto-awskms",
     scalaVersion := V.Scala213
   )
   .dependsOn(coreJVM)
   .enablePlugins(BuildInfoPlugin)
-  .settings(dottySettings(Scala3))
+  .settings(dottySettings(Scala3, Scala213))
 
 lazy val docs = project
   .in(file("zio-crypto-docs"))
+  .enablePlugins(WebsitePlugin)
   .settings(
     scalaVersion := V.Scala213,
     moduleName := "zio-crypto-docs",
@@ -100,7 +96,7 @@ lazy val docs = project
     mainModuleName := (coreJVM / moduleName).value,
     projectStage := ProjectStage.Experimental,
     docsPublishBranch := "main",
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM)
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM),
+    libraryDependencies ~= { _.filterNot(_.name contains "mdoc")}
   )
   .dependsOn(coreJVM, awsKMSJVM, gcpKMSJVM)
-  .enablePlugins(WebsitePlugin)
