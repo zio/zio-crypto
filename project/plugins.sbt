@@ -1,4 +1,4 @@
-addSbtPlugin("dev.zio" % "zio-sbt-website"   % "0.3.10+7-7d3f8cd4-SNAPSHOT")
-addSbtPlugin("dev.zio" % "zio-sbt-ecosystem" % "0.3.10+7-7d3f8cd4-SNAPSHOT")
+addSbtPlugin("dev.zio" % "zio-sbt-website"   % "0.3.10+17-30bab08e-SNAPSHOT")
+addSbtPlugin("dev.zio" % "zio-sbt-ecosystem" % "0.3.10+17-30bab08e-SNAPSHOT")
 
 resolvers += Resolver.sonatypeRepo("public")

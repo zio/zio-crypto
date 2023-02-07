@@ -2,6 +2,10 @@
 # task and should be included in the git repository. Please do not edit it manually.
 
 name: Website
+env:
+  JDK_JAVA_OPTIONS: -XX:+PrintCommandLineFlags -Xmx6G -Xss4M -XX:+UseG1GC
+  JVM_OPTS: -XX:+PrintCommandLineFlags -Xmx6G -Xss4M -XX:+UseG1GC
+  NODE_OPTIONS: --max_old_space_size=6144
 'on':
   workflow_dispatch: {}
   release:
@@ -13,9 +17,9 @@ name: Website
   pull_request: {}
 jobs:
   build:
-    name: Build and Test
+    name: Build
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' }}
+    continue-on-error: true
     steps:
     - name: Git Checkout
       uses: actions/checkout@v3.3.0
@@ -25,7 +29,7 @@ jobs:
       uses: actions/setup-java@v3.9.0
       with:
         distribution: temurin
-        java-version: 17
+        java-version: '17'
         check-latest: true
     - name: Check if the README file is up to date
       run: sbt  docs/checkReadme
@@ -35,9 +39,93 @@ jobs:
       run: sbt  +publishLocal
     - name: Check website build process
       run: sbt docs/clean; sbt  docs/buildWebsite
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+    - name: Git Checkout
+      uses: actions/checkout@v3.3.0
+      with:
+        fetch-depth: '0'
+    - name: Setup Scala
+      uses: actions/setup-java@v3.9.0
+      with:
+        distribution: temurin
+        java-version: '17'
+        check-latest: true
+    - name: Lint
+      run: sbt lint
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    strategy:
+      fail-fast: false
+      matrix:
+        java:
+        - '8'
+        - '11'
+        - '17'
+        project-scala:
+        - '''project coreJVM'' ''++2.11.12'''
+        - '''project coreJVM'' ''++2.12.15'''
+        - '''project coreJVM'' ''++2.13.8'''
+        - '''project coreJVM'' ''++3.2.1'''
+        - '''project awsKMSJVM'' ''++2.11.12'''
+        - '''project awsKMSJVM'' ''++2.12.15'''
+        - '''project awsKMSJVM'' ''++2.13.8'''
+        - '''project awsKMSJVM'' ''++3.2.1'''
+        - '''project gcpKMSJVM'' ''++2.11.12'''
+        - '''project gcpKMSJVM'' ''++2.12.15'''
+        - '''project gcpKMSJVM'' ''++2.13.8'''
+        - '''project gcpKMSJVM'' ''++3.2.1'''
+    steps:
+    - name: Setup Scala
+      uses: actions/setup-java@v3.9.0
+      with:
+        distribution: temurin
+        java-version: ${{ matrix.java }}
+        check-latest: true
+    - name: Git Checkout
+      uses: actions/checkout@v3.3.0
+      with:
+        fetch-depth: '0'
+    - name: Test
+      run: sbt ${{ matrix.project-scala }} test
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    needs:
+    - build
+    - lint
+    - test
+    if: ${{ (github.event_name != 'pull_request') && ((github.ref == 'refs/heads/main') || (startsWith(github.ref, 'refs/tags/v'))) }}
+    steps:
+    - name: Git Checkout
+      uses: actions/checkout@v3.3.0
+      with:
+        fetch-depth: '0'
+    - name: Setup Scala
+      uses: actions/setup-java@v3.9.0
+      with:
+        distribution: temurin
+        java-version: '17'
+        check-latest: true
+    - name: Release
+      run: sbt ci-release
+      env:
+        PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+        PGP_SECRET: ${{ secrets.PGP_SECRET }}
+        SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
   publish-docs:
     name: Publish Docs
     runs-on: ubuntu-latest
+    continue-on-error: false
+    needs:
+    - release
     if: ${{ ((github.event_name == 'release') && (github.event.action == 'published')) || (github.event_name == 'workflow_dispatch') }}
     steps:
     - name: Git Checkout
@@ -48,7 +136,7 @@ jobs:
       uses: actions/setup-java@v3.9.0
       with:
         distribution: temurin
-        java-version: 17
+        java-version: '17'
         check-latest: true
     - name: Setup NodeJs
       uses: actions/setup-node@v3
@@ -62,7 +150,8 @@ jobs:
   generate-readme:
     name: Generate README
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'push') || ((github.event_name == 'release') && (github.event_name == 'published')) }}
+    continue-on-error: false
+    if: ${{ (github.event_name == 'push') || ((github.event_name == 'release') && (github.event.action == 'published')) }}
     steps:
     - name: Git Checkout
       uses: actions/checkout@v3.3.0
@@ -73,7 +162,7 @@ jobs:
       uses: actions/setup-java@v3.9.0
       with:
         distribution: temurin
-        java-version: 17
+        java-version: '17'
         check-latest: true
     - name: Generate Readme
       run: sbt  docs/generateReadme

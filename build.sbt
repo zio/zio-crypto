@@ -85,6 +85,7 @@ lazy val awsKMSJVM = project
 lazy val docs = project
   .in(file("zio-crypto-docs"))
   .settings(
+    publish / skip := true,
     scalaVersion := Scala213,
     moduleName := "zio-crypto-docs",
     scalacOptions -= "-Yno-imports",
@@ -94,7 +95,13 @@ lazy val docs = project
     projectStage := ProjectStage.Experimental,
     docsPublishBranch := "main",
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM),
-    libraryDependencies ~= { _.filterNot(_.name contains "mdoc") }
+    libraryDependencies ~= { _.filterNot(_.name contains "mdoc") },
+    supportedScalaVersions :=
+      Map(
+        (coreJVM / thisProject).value.id   -> (coreJVM / crossScalaVersions).value,
+        (awsKMSJVM / thisProject).value.id -> (awsKMSJVM / crossScalaVersions).value,
+        (gcpKMSJVM / thisProject).value.id -> (gcpKMSJVM / crossScalaVersions).value
+      )
   )
   .dependsOn(coreJVM, awsKMSJVM, gcpKMSJVM)
   .enablePlugins(WebsitePlugin)
