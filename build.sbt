@@ -23,13 +23,23 @@ addCommandAlias("testJVM", ";coreJVM/test")
 
 lazy val root = project
   .in(file("."))
-  .settings(publish / skip := true)
+  .settings(
+    publish / skip := true,
+    ciEnabledBranches := Seq("main"),
+    supportedScalaVersions :=
+      Map(
+        (coreJVM / thisProject).value.id   -> (coreJVM / crossScalaVersions).value,
+        (awsKMSJVM / thisProject).value.id -> (awsKMSJVM / crossScalaVersions).value,
+        (gcpKMSJVM / thisProject).value.id -> (gcpKMSJVM / crossScalaVersions).value
+      )
+  )
   .aggregate(
     coreJVM,
     gcpKMSJVM,
     awsKMSJVM,
     docs
   )
+  .enablePlugins(ZioSbtCiPlugin)
 
 lazy val core = crossProject(JVMPlatform)
   .in(file("zio-crypto"))
@@ -93,15 +103,8 @@ lazy val docs = project
     projectName := "ZIO Crypto",
     mainModuleName := (coreJVM / moduleName).value,
     projectStage := ProjectStage.Experimental,
-    docsPublishBranch := "main",
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM),
-    libraryDependencies ~= { _.filterNot(_.name contains "mdoc") },
-    supportedScalaVersions :=
-      Map(
-        (coreJVM / thisProject).value.id   -> (coreJVM / crossScalaVersions).value,
-        (awsKMSJVM / thisProject).value.id -> (awsKMSJVM / crossScalaVersions).value,
-        (gcpKMSJVM / thisProject).value.id -> (gcpKMSJVM / crossScalaVersions).value
-      )
+    libraryDependencies ~= { _.filterNot(_.name contains "mdoc") }
   )
   .dependsOn(coreJVM, awsKMSJVM, gcpKMSJVM)
   .enablePlugins(WebsitePlugin)
