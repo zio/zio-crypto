@@ -1,4 +1,4 @@
-import V._
+import Versions._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 enablePlugins(EcosystemPlugin)
