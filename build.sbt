@@ -5,7 +5,7 @@ enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
   List(
-    name := "ZIO Cache",
+    name := "ZIO Crypto",
     scalaVersion := Scala213,
     crossScalaVersions := Seq(Scala211, Scala212, Scala213, Scala3),
     developers := List(
@@ -44,7 +44,8 @@ lazy val core = crossProject(JVMPlatform)
   .in(file("zio-crypto"))
   .settings(
     stdSettings(
-      packageName = "zio-crypto",
+      name = "zio-crypto",
+      packageName = "zio.crypto",
       enableSilencer = true,
       enableCrossProject = true
     )
@@ -63,7 +64,10 @@ lazy val coreJVM = core.jvm
 lazy val gcpKMSJVM = project
   .in(file("zio-crypto-gcpkms"))
   .settings(
-    stdSettings(packageName = "zio-crypto-gcpkms")
+    stdSettings(
+      name = "zio-crypto-gcpkms",
+      packageName = "zio.crypto.gcpkms"
+    )
   )
   .dependsOn(coreJVM)
 
@@ -71,7 +75,8 @@ lazy val awsKMSJVM = project
   .in(file("zio-crypto-awskms"))
   .settings(
     stdSettings(
-      packageName = "zio-crypto-awskms",
+      name = "zio-crypto-awskms",
+      packageName = "zio.crypto.awskms",
       enableCrossProject = false
     )
   )
