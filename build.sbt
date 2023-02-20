@@ -39,7 +39,6 @@ lazy val root = project
     awsKMSJVM,
     docs
   )
-  .enablePlugins(ZioSbtCiPlugin)
 
 lazy val core = crossProject(JVMPlatform)
   .in(file("zio-crypto"))
@@ -89,8 +88,7 @@ lazy val docs = project
     projectName := "ZIO Crypto",
     mainModuleName := (coreJVM / moduleName).value,
     projectStage := ProjectStage.Experimental,
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM),
-    libraryDependencies ~= { _.filterNot(_.name contains "mdoc") }
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM)
   )
   .dependsOn(coreJVM, awsKMSJVM, gcpKMSJVM)
   .enablePlugins(WebsitePlugin)
