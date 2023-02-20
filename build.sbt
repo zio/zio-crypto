@@ -1,13 +1,13 @@
 import Versions._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
-enablePlugins(EcosystemPlugin)
+enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
   List(
+    name := "ZIO Cache",
     scalaVersion := Scala213,
-    organization := "dev.zio",
-    homepage := Some(url("https://zio.dev/zio-crypto/")),
+    crossScalaVersions := Seq(Scala211, Scala212, Scala213, Scala3),
     developers := List(
       Developer(
         "jdegoes",
@@ -15,7 +15,14 @@ inThisBuild(
         "john@degoes.net",
         url("http://degoes.net")
       )
-    )
+    ),
+    ciEnabledBranches := Seq("main"),
+    supportedScalaVersions :=
+      Map(
+        (coreJVM / thisProject).value.id   -> (coreJVM / crossScalaVersions).value,
+        (awsKMSJVM / thisProject).value.id -> (awsKMSJVM / crossScalaVersions).value,
+        (gcpKMSJVM / thisProject).value.id -> (gcpKMSJVM / crossScalaVersions).value
+      )
   )
 )
 
@@ -24,14 +31,7 @@ addCommandAlias("testJVM", ";coreJVM/test")
 lazy val root = project
   .in(file("."))
   .settings(
-    publish / skip := true,
-    ciEnabledBranches := Seq("main"),
-    supportedScalaVersions :=
-      Map(
-        (coreJVM / thisProject).value.id   -> (coreJVM / crossScalaVersions).value,
-        (awsKMSJVM / thisProject).value.id -> (awsKMSJVM / crossScalaVersions).value,
-        (gcpKMSJVM / thisProject).value.id -> (gcpKMSJVM / crossScalaVersions).value
-      )
+    publish / skip := true
   )
   .aggregate(
     coreJVM,
@@ -45,10 +45,7 @@ lazy val core = crossProject(JVMPlatform)
   .in(file("zio-crypto"))
   .settings(
     stdSettings(
-      name = "zio-crypto",
-      packageName = "zio.crypto",
-      scalaVersion = Scala213,
-      crossScalaVersions = Seq(Scala211, Scala212, Scala213, Scala3),
+      packageName = "zio-crypto",
       enableSilencer = true,
       enableCrossProject = true
     )
@@ -61,36 +58,25 @@ lazy val core = crossProject(JVMPlatform)
       "dev.zio"               %% "zio-stacktracer" % ZIOStacktracerVersion
     )
   )
-  .enablePlugins(EcosystemPlugin)
 
 lazy val coreJVM = core.jvm
 
 lazy val gcpKMSJVM = project
   .in(file("zio-crypto-gcpkms"))
   .settings(
-    stdSettings(
-      name = "zio-crypto-gcpkms",
-      packageName = "zio.crypto.gcpkms",
-      scalaVersion = Scala213,
-      crossScalaVersions = Seq(Scala211, Scala212, Scala213, Scala3)
-    )
+    stdSettings(packageName = "zio-crypto-gcpkms")
   )
   .dependsOn(coreJVM)
-  .enablePlugins(EcosystemPlugin)
 
 lazy val awsKMSJVM = project
   .in(file("zio-crypto-awskms"))
   .settings(
     stdSettings(
-      name = "zio-crypto-awskms",
-      packageName = "zio.crypto.awskms",
-      scalaVersion = Scala213,
-      crossScalaVersions = Seq(Scala211, Scala212, Scala213, Scala3),
+      packageName = "zio-crypto-awskms",
       enableCrossProject = false
     )
   )
   .dependsOn(coreJVM)
-  .enablePlugins(EcosystemPlugin)
 
 lazy val docs = project
   .in(file("zio-crypto-docs"))
