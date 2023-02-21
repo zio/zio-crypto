@@ -6,8 +6,6 @@ enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 inThisBuild(
   List(
     name := "ZIO Crypto",
-    scalaVersion := Scala213,
-    crossScalaVersions := Seq(Scala211, Scala212, Scala213, Scala3),
     developers := List(
       Developer(
         "jdegoes",
@@ -45,17 +43,16 @@ lazy val core = crossProject(JVMPlatform)
   .settings(
     stdSettings(
       name = "zio-crypto",
-      packageName = "zio.crypto",
       enableSilencer = true,
       enableCrossProject = true
     )
   )
-  .settings(enableZIO(ZIOVersion, enableTesting = true))
+  .settings(enableZIO(zioVersion, enableTesting = true))
   .settings(
     libraryDependencies ++= Seq(
-      "com.google.crypto.tink" % "tink"            % TinkVersion,
-      "dev.zio"               %% "izumi-reflect"   % IzumiReflectVersion,
-      "dev.zio"               %% "zio-stacktracer" % ZIOStacktracerVersion
+      "com.google.crypto.tink" % "tink"            % tinkVersion,
+      "dev.zio"               %% "izumi-reflect"   % izumiReflectVersion,
+      "dev.zio"               %% "zio-stacktracer" % zioStacktracerVersion
     )
   )
 
@@ -63,34 +60,22 @@ lazy val coreJVM = core.jvm
 
 lazy val gcpKMSJVM = project
   .in(file("zio-crypto-gcpkms"))
-  .settings(
-    stdSettings(
-      name = "zio-crypto-gcpkms",
-      packageName = "zio.crypto.gcpkms"
-    )
-  )
+  .settings(stdSettings(name = "zio-crypto-gcpkms"))
   .dependsOn(coreJVM)
 
 lazy val awsKMSJVM = project
   .in(file("zio-crypto-awskms"))
-  .settings(
-    stdSettings(
-      name = "zio-crypto-awskms",
-      packageName = "zio.crypto.awskms",
-      enableCrossProject = false
-    )
-  )
+  .settings(stdSettings(name = "zio-crypto-awskms", enableCrossProject = false))
   .dependsOn(coreJVM)
 
 lazy val docs = project
   .in(file("zio-crypto-docs"))
   .settings(
     publish / skip := true,
-    scalaVersion := Scala213,
     moduleName := "zio-crypto-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    projectName := "ZIO Crypto",
+    projectName := (ThisBuild / name).value,
     mainModuleName := (coreJVM / moduleName).value,
     projectStage := ProjectStage.Experimental,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM)
