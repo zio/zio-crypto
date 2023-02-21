@@ -69,17 +69,17 @@ jobs:
         - '17'
         scala-project:
         - ++2.11.12 coreJVM
-        - ++2.12.15 coreJVM
-        - ++2.13.8 coreJVM
-        - ++3.2.1 coreJVM
+        - ++2.12.17 coreJVM
+        - ++2.13.10 coreJVM
+        - ++3.2.2 coreJVM
         - ++2.11.12 awsKMSJVM
-        - ++2.12.15 awsKMSJVM
-        - ++2.13.8 awsKMSJVM
-        - ++3.2.1 awsKMSJVM
+        - ++2.12.17 awsKMSJVM
+        - ++2.13.10 awsKMSJVM
+        - ++3.2.2 awsKMSJVM
         - ++2.11.12 gcpKMSJVM
-        - ++2.12.15 gcpKMSJVM
-        - ++2.13.8 gcpKMSJVM
-        - ++3.2.1 gcpKMSJVM
+        - ++2.12.17 gcpKMSJVM
+        - ++2.13.10 gcpKMSJVM
+        - ++3.2.2 gcpKMSJVM
     steps:
     - name: Setup Scala
       uses: actions/setup-java@v3.10.0
