@@ -47,7 +47,7 @@ lazy val core = crossProject(JVMPlatform)
       enableCrossProject = true
     )
   )
-  .settings(enableZIO(zioVersion, enableTesting = true))
+  .settings(enableZIO())
   .settings(
     libraryDependencies ++= Seq(
       "com.google.crypto.tink" % "tink"            % tinkVersion,
