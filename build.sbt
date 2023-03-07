@@ -6,6 +6,7 @@ enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 inThisBuild(
   List(
     name := "ZIO Crypto",
+    crossScalaVersions -= scala211.value,
     developers := List(
       Developer(
         "jdegoes",
