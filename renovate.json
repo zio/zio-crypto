@@ -1,10 +1,10 @@
 {
   "extends": [
-    "config:base"
+    "config:base",
+    "github>zio/zio-renovate:renovate"
   ],
   "packageRules": [
     {
-      "automerge": true,
       "matchBaseBranches": [
         "main"
       ]
