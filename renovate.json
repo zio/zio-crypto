@@ -1,7 +1,7 @@
 {
   "extends": [
     "config:base",
-    "github>zio/zio-renovate:renovate"
+    "github>zio/zio-renovate-config:renovate"
   ],
   "packageRules": [
     {
