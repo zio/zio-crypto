@@ -63,7 +63,7 @@ object Example extends zio.App {
       charset = US_ASCII
     )
   } yield verified).exitCode
-    .provideLayer(Hash.live)
+    .provideCustomLayer(Hash.live)
 }
 ```
 
@@ -83,6 +83,6 @@ object Example extends zio.App {
       digest = digest
     )
   } yield verified).exitCode
-    .provideLayer(Hash.live ++ SecureRandom.live.orDie)
+    .provideCustomLayer(Hash.live ++ SecureRandom.live.orDie)
 }
 ```

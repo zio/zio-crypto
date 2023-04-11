@@ -33,7 +33,7 @@ object Example extends zio.App {
         randBytes <- SecureRandom.nextBytes(5)
         randString <- SecureRandom.nextString(5)
     } yield ExitCode.success)
-      .provideLayer(SecureRandom.live.orDie)
+      .provideCustomLayer(SecureRandom.live.orDie)
     
 }
 ```

@@ -31,5 +31,5 @@ object SecureRandomSpec extends ZIOSpecDefault {
         }
       }
     )
-  ).provideLayer(SecureRandom.live)
+  ).provideCustomLayer(SecureRandom.live)
 }

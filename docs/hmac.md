@@ -32,7 +32,7 @@ object Example extends zio.App {
     hmac     <- HMAC.sign(m, k, US_ASCII)
     verified <- HMAC.verify(m, hmac, k, US_ASCII)
   } yield verified).exitCode
-    .provideLayer(HMAC.live)
+    .provideCustomLayer(HMAC.live)
 }
 ```
 
@@ -45,6 +45,6 @@ object Example extends zio.App {
     hmac     <- HMAC.sign(m1, k)
     verified <- HMAC.verify(m0, hmac, k)
   } yield verified).exitCode
-    .provideLayer(HMAC.live ++ SecureRandom.live.orDie)
+    .provideCustomLayer(HMAC.live ++ SecureRandom.live.orDie)
 }
 ```

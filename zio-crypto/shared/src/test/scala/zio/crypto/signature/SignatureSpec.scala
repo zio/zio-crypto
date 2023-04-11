@@ -58,5 +58,5 @@ object SignatureSpec extends ZIOSpecDefault {
     testAlgorithm(SignatureAlgorithm.ECDSA_P256),
     testAlgorithm(SignatureAlgorithm.ED25519),
     testAlgorithm(SignatureAlgorithm.Rsa3072SsaPkcs1Sha256F4)
-  ).provideLayer(Signature.live.orDie ++ KeysetManager.live)
+  ).provideCustomLayer(Signature.live.orDie ++ KeysetManager.live)
 }

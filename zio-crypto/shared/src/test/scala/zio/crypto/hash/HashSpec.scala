@@ -69,6 +69,6 @@ object HashSpec extends ZIOSpecDefault {
     unsecure(implicit s => testAlgorithm[HashAlgorithm.SHA1]),
     testAlgorithm[HashAlgorithm.SHA256],
     testAlgorithm[HashAlgorithm.SHA512]
-  ).provideLayer(Hash.live)
+  ).provideCustomLayer(Hash.live)
 
 }
