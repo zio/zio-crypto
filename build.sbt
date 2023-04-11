@@ -16,13 +16,7 @@ inThisBuild(
         url("http://degoes.net")
       )
     ),
-    ciEnabledBranches := Seq("main"),
-    ciTargetScalaVersions :=
-      Map(
-        (`zio-crypto`.jvm / thisProject).value.id    -> (`zio-crypto`.jvm / crossScalaVersions).value,
-        (`zio-crypto-awskms` / thisProject).value.id -> (`zio-crypto-awskms` / crossScalaVersions).value,
-        (`zio-crypto-gcpkms` / thisProject).value.id -> (`zio-crypto-gcpkms` / crossScalaVersions).value
-      )
+    ciEnabledBranches := Seq("main")
   )
 )
 

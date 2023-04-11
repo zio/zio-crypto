@@ -75,16 +75,6 @@ jobs:
         - '8'
         - '11'
         - '17'
-        scala-project:
-        - ++2.12.17 zio-cryptoJVM
-        - ++2.13.10 zio-cryptoJVM
-        - ++3.2.2 zio-cryptoJVM
-        - ++2.12.17 zio-crypto-awskms
-        - ++2.13.10 zio-crypto-awskms
-        - ++3.2.2 zio-crypto-awskms
-        - ++2.12.17 zio-crypto-gcpkms
-        - ++2.13.10 zio-crypto-gcpkms
-        - ++3.2.2 zio-crypto-gcpkms
     steps:
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
@@ -101,7 +91,7 @@ jobs:
       with:
         fetch-depth: '0'
     - name: Test
-      run: sbt ${{ matrix.scala-project }}/test
+      run: sbt ++test
   update-readme:
     name: Update README
     runs-on: ubuntu-latest
