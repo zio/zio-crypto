@@ -54,5 +54,5 @@ object SymmetricEncryptionSpec extends ZIOSpecDefault {
   def spec: Spec[TestEnvironment with Scope, Any] = suite("SymmetricEncryptionSpec")(
     testAlgorithm(SymmetricEncryptionAlgorithm.AES128GCM),
     testAlgorithm(SymmetricEncryptionAlgorithm.AES256GCM)
-  ).provideCustomLayer(KeysetManager.live ++ SymmetricEncryption.live.orDie)
+  ).provideLayer(KeysetManager.live ++ SymmetricEncryption.live.orDie)
 }

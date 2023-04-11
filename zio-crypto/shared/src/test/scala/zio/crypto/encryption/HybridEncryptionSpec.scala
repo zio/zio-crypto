@@ -54,5 +54,5 @@ object HybridEncryptionSpec extends ZIOSpecDefault {
   def spec: Spec[TestEnvironment with Scope, Any] = suite("HybridEncryptionSpec")(
     testAlgorithm(HybridEncryptionAlgorithm.EciesP256HkdfHmacSha256Aes128CtrHmacSha256),
     testAlgorithm(HybridEncryptionAlgorithm.EciesP256HkdfHmacSha256Aes128Gcm)
-  ).provideCustomLayer(KeysetManager.live ++ HybridEncryption.live.orDie)
+  ).provideLayer(KeysetManager.live ++ HybridEncryption.live.orDie)
 }

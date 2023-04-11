@@ -98,5 +98,5 @@ object MACSpec extends ZIOSpecDefault {
     testAlgorithm(MACAlgorithm.HMACSHA512),
     testAlgorithm(MACAlgorithm.HMACSHA512HalfDigest),
     testAlgorithm(MACAlgorithm.AES256CMAC)
-  ).provideCustomLayer(MAC.live.orDie ++ KeysetManager.live)
+  ).provideLayer(MAC.live.orDie ++ KeysetManager.live)
 }
