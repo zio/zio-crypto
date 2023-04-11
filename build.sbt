@@ -17,16 +17,14 @@ inThisBuild(
       )
     ),
     ciEnabledBranches := Seq("main"),
-    supportedScalaVersions :=
+    ciTargetScalaVersions :=
       Map(
-        (coreJVM / thisProject).value.id   -> (coreJVM / crossScalaVersions).value,
-        (awsKMSJVM / thisProject).value.id -> (awsKMSJVM / crossScalaVersions).value,
-        (gcpKMSJVM / thisProject).value.id -> (gcpKMSJVM / crossScalaVersions).value
+        (`zio-crypto`.jvm / thisProject).value.id    -> (`zio-crypto`.jvm / crossScalaVersions).value,
+        (`zio-crypto-awskms` / thisProject).value.id -> (`zio-crypto-awskms` / crossScalaVersions).value,
+        (`zio-crypto-gcpkms` / thisProject).value.id -> (`zio-crypto-gcpkms` / crossScalaVersions).value
       )
   )
 )
-
-addCommandAlias("testJVM", ";coreJVM/test")
 
 lazy val root = project
   .in(file("."))
@@ -34,17 +32,15 @@ lazy val root = project
     publish / skip := true
   )
   .aggregate(
-    coreJVM,
-    gcpKMSJVM,
-    awsKMSJVM,
+    `zio-crypto`.jvm,
+    `zio-crypto-gcpkms`,
+    `zio-crypto-awskms`,
     docs
   )
 
-lazy val core = crossProject(JVMPlatform)
-  .in(file("zio-crypto"))
+lazy val `zio-crypto` = crossProject(JVMPlatform)
   .settings(
     stdSettings(
-      name = "zio-crypto",
       enableSilencer = true,
       enableCrossProject = true
     )
@@ -58,17 +54,13 @@ lazy val core = crossProject(JVMPlatform)
     )
   )
 
-lazy val coreJVM = core.jvm
+lazy val `zio-crypto-gcpkms` = project
+  .settings(stdSettings())
+  .dependsOn(`zio-crypto`.jvm)
 
-lazy val gcpKMSJVM = project
-  .in(file("zio-crypto-gcpkms"))
-  .settings(stdSettings(name = "zio-crypto-gcpkms"))
-  .dependsOn(coreJVM)
-
-lazy val awsKMSJVM = project
-  .in(file("zio-crypto-awskms"))
-  .settings(stdSettings(name = "zio-crypto-awskms", enableCrossProject = false))
-  .dependsOn(coreJVM)
+lazy val `zio-crypto-awskms` = project
+  .settings(stdSettings(enableCrossProject = false))
+  .dependsOn(`zio-crypto`.jvm)
 
 lazy val docs = project
   .in(file("zio-crypto-docs"))
@@ -78,9 +70,9 @@ lazy val docs = project
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
     projectName := (ThisBuild / name).value,
-    mainModuleName := (coreJVM / moduleName).value,
+    mainModuleName := (`zio-crypto`.jvm / moduleName).value,
     projectStage := ProjectStage.Experimental,
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM)
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(`zio-crypto`.jvm, `zio-crypto-awskms`, `zio-crypto-gcpkms`)
   )
-  .dependsOn(coreJVM, awsKMSJVM, gcpKMSJVM)
+  .dependsOn(`zio-crypto`.jvm, `zio-crypto-awskms`, `zio-crypto-gcpkms`)
   .enablePlugins(WebsitePlugin)
