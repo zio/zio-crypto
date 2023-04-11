@@ -25,5 +25,5 @@ One common form of error in security is using a non-recommended algorithm with t
 ## Installation
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-crypto" % "@VERSION@"
+libraryDependencies += "dev.zio" %% "zio-crypto" % "<version>"
 ```

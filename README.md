@@ -30,7 +30,7 @@ libraryDependencies += "dev.zio" %% "zio-crypto" % "<version>"
 
 ## Documentation
 
-Learn more on the [ZIO Crypto homepage](https://zio.dev/zio-crypto/)!
+Learn more on the [ZIO Crypto homepage](https://zio.dev/zio-crypto)!
 
 ## Contributing
 

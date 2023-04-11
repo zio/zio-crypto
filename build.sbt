@@ -1,10 +1,13 @@
-import BuildHelper._
+import Versions._
+import sbtcrossproject.CrossPlugin.autoImport.crossProject
+
+enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
   List(
-    organization := "dev.zio",
-    homepage := Some(url("https://zio.dev/zio-crypto/")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    name := "ZIO Crypto",
+    zioVersion := "2.0.0",
+    crossScalaVersions -= scala211.value,
     developers := List(
       Developer(
         "jdegoes",
@@ -12,105 +15,64 @@ inThisBuild(
         "john@degoes.net",
         url("http://degoes.net")
       )
-    )
+    ),
+    ciEnabledBranches := Seq("main"),
+    ciTargetScalaVersions :=
+      Map(
+        (`zio-crypto`.jvm / thisProject).value.id    -> (`zio-crypto`.jvm / crossScalaVersions).value,
+        (`zio-crypto-awskms` / thisProject).value.id -> (`zio-crypto-awskms` / crossScalaVersions).value,
+        (`zio-crypto-gcpkms` / thisProject).value.id -> (`zio-crypto-gcpkms` / crossScalaVersions).value
+      )
   )
 )
-
-addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
-addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check")
-
-addCommandAlias(
-  "testJVM",
-  ";coreJVM/test"
-)
-
-val googleCloudKMSVersion = "2.17.0"
-val tinkVersion           = "1.7.0"
-val zioVersion            = "2.0.0"
-val awsKMSVersion         = "1.12.445"
 
 lazy val root = project
   .in(file("."))
-  .settings(publish / skip := true)
+  .settings(
+    publish / skip := true
+  )
   .aggregate(
-    coreJVM,
-    gcpKMSJVM,
-    awsKMSJVM,
+    `zio-crypto`.jvm,
+    `zio-crypto-gcpkms`,
+    `zio-crypto-awskms`,
     docs
   )
 
-lazy val core = crossProject(JVMPlatform)
-  .in(file("zio-crypto"))
-  .settings(stdSettings("zio-crypto"))
-  .settings(crossProjectSettings)
-  .settings(buildInfoSettings("zio.crypto"))
-  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
+lazy val `zio-crypto` = crossProject(JVMPlatform)
   .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"      % zioVersion,
-      "dev.zio"              %%% "zio-test" % zioVersion % "test",
-      "com.google.crypto.tink" % "tink"     % tinkVersion
+    stdSettings(
+      enableSilencer = true,
+      enableCrossProject = true
     )
   )
-  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
-  .enablePlugins(BuildInfoPlugin)
-
-lazy val coreJVM = core.jvm
-  .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
-  .settings(scalaReflectTestSettings)
-
-lazy val gcpKMSJVM = project
-  .in(file("zio-crypto-gcpkms"))
-  .settings(stdSettings("zio-crypto-gcpkms"))
-  .settings(buildInfoSettings("zio.crypto.gcpkms"))
-  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
+  .settings(enableZIO())
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"              % zioVersion,
-      "dev.zio"              %%% "zio-test"         % zioVersion % "test",
-      "com.google.crypto.tink" % "tink-gcpkms"      % tinkVersion,
-      "com.google.cloud"       % "google-cloud-kms" % googleCloudKMSVersion
+      "com.google.crypto.tink" % "tink"            % tinkVersion,
+      "dev.zio"               %% "izumi-reflect"   % izumiReflectVersion,
+      "dev.zio"               %% "zio-stacktracer" % zioStacktracerVersion
     )
   )
-  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
-  .dependsOn(coreJVM)
-  .enablePlugins(BuildInfoPlugin)
-  .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
-  .settings(scalaReflectTestSettings)
 
-lazy val awsKMSJVM = project
-  .in(file("zio-crypto-awskms"))
-  .settings(stdSettings("zio-crypto-awskms"))
-  .settings(buildInfoSettings("zio.crypto.awskms"))
-  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
-  .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio"              %%% "zio"              % zioVersion,
-      "dev.zio"              %%% "zio-test"         % zioVersion % "test",
-      "com.google.crypto.tink" % "tink-awskms"      % tinkVersion,
-      "com.amazonaws"          % "aws-java-sdk-kms" % awsKMSVersion
-    )
-  )
-  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
-  .dependsOn(coreJVM)
-  .enablePlugins(BuildInfoPlugin)
-  .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
-  .settings(scalaReflectTestSettings)
+lazy val `zio-crypto-gcpkms` = project
+  .settings(stdSettings())
+  .dependsOn(`zio-crypto`.jvm)
+
+lazy val `zio-crypto-awskms` = project
+  .settings(stdSettings(enableCrossProject = false))
+  .dependsOn(`zio-crypto`.jvm)
 
 lazy val docs = project
   .in(file("zio-crypto-docs"))
   .settings(
+    publish / skip := true,
     moduleName := "zio-crypto-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    projectName := "ZIO Crypto",
-    mainModuleName := (coreJVM / moduleName).value,
+    projectName := (ThisBuild / name).value,
+    mainModuleName := (`zio-crypto`.jvm / moduleName).value,
     projectStage := ProjectStage.Experimental,
-    docsPublishBranch := "main",
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(coreJVM, awsKMSJVM, gcpKMSJVM)
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(`zio-crypto`.jvm, `zio-crypto-awskms`, `zio-crypto-gcpkms`)
   )
-  .dependsOn(coreJVM, awsKMSJVM, gcpKMSJVM)
+  .dependsOn(`zio-crypto`.jvm, `zio-crypto-awskms`, `zio-crypto-gcpkms`)
   .enablePlugins(WebsitePlugin)
