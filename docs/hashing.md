@@ -9,9 +9,9 @@ The `Hash` environment provides basic 1-way hash functions.
 We support MD5, SHA1, SHA256, SHA384, and SHA512.
 
 | Function | Security (in bits) against collision attacks | Dangerous?  |
-|----------|----------------------------------------------|-------------|
-| MD5      | <= 18 (collisions found)                     | *DANGEROUS* |
-| SHA1     | < 63 (collisions found)                      | *DANGEROUS* |
+| -------- | -------------------------------------------- | ----------- |
+| MD5      | \<= 18 (collisions found)                    | _DANGEROUS_ |
+| SHA1     | < 63 (collisions found)                      | _DANGEROUS_ |
 | SHA256   | 128                                          |             |
 | SHA384   | 192                                          |             |
 | SHA512   | 256                                          |             |
